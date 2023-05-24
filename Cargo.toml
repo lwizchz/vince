@@ -1,0 +1,15 @@
+[package]
+name = "vince"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { version = "0.10.1", features = ["dynamic_linking"] }
+bevy_common_assets = { version = "0.6.0", features = ["toml"] }
+bevy_framepace = "0.12.1"
+cpal = "0.15.2"
+oddio = "0.6.2"
+serde = "1.0.163"
+typetag = "0.2.8"

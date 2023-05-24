@@ -1,0 +1,31 @@
+patches = [
+    ["0M0O", "1M0I"],
+    ["0M0O", "2M1K"],
+
+    ["2M0O", "3M0I"],
+    ["2M0O", "4M1K"],
+
+    ["4M0O", "5M0I"],
+    ["4M0O", "8M0I"],
+    # ["4M0O", "AO"],
+
+    ["6M0O", "7M0I"],
+    ["6M0O", "8M1I"],
+    # ["6M0O", "AO"],
+
+    ["8M0O", "9M0I"],
+    ["8M0O", "AO"],
+]
+
+[modules]
+0 = { type = "Oscillator", func = "Square", knobs = [0.0, 1.0, 200.0, 0.0] }
+1 = { type = "Oscilloscope" }
+2 = { type = "Oscillator", func = "Triangle", knobs = [25.0, 200.0, 2.0, 0.0] }
+3 = { type = "Oscilloscope" }
+4 = { type = "Oscillator", func = "Sine", knobs = [0.0, 2500.0, 1.0, 0.0] }
+5 = { type = "Oscilloscope" }
+
+6 = { type = "Oscillator", func = "Sine", knobs = [1.0, 1000.0, 1.0, 0.0] }
+7 = { type = "Oscilloscope" }
+8 = { type = "Multiplier" }
+9 = { type = "Oscilloscope" }
