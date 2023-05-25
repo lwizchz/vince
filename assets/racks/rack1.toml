@@ -1,31 +1,29 @@
-patches = [
-    ["0M0O", "1M0I"],
-    ["0M0O", "2M1K"],
-
-    ["2M0O", "3M0I"],
-    ["2M0O", "4M1K"],
-
-    ["4M0O", "5M0I"],
-    ["4M0O", "8M0I"],
-    # ["4M0O", "AO"],
-
-    ["6M0O", "7M0I"],
-    ["6M0O", "8M1I"],
-    # ["6M0O", "AO"],
-
-    ["8M0O", "9M0I"],
-    ["8M0O", "AO"],
-]
-
 [modules]
-0 = { type = "Oscillator", func = "Square", knobs = [0.0, 1.0, 200.0, 0.0] }
-1 = { type = "Oscilloscope" }
-2 = { type = "Oscillator", func = "Triangle", knobs = [25.0, 200.0, 2.0, 0.0] }
-3 = { type = "Oscilloscope" }
-4 = { type = "Oscillator", func = "Sine", knobs = [0.0, 2500.0, 1.0, 0.0] }
-5 = { type = "Oscilloscope" }
+0 = { name = "Audio Out", type = "AudioOut", knobs = [1.0] }
 
-6 = { type = "Oscillator", func = "Sine", knobs = [1.0, 1000.0, 1.0, 0.0] }
-7 = { type = "Oscilloscope" }
-8 = { type = "Multiplier" }
-9 = { type = "Oscilloscope" }
+1 = { name = "LFO 1", type = "Oscillator", func = "Square", knobs = [0.0, 1.0, 200.0, 0.0] }
+# 2 = { name = "Scope 1", type = "Oscilloscope" }
+3 = { name = "LFO 2", type = "Oscillator", func = "Triangle", knobs = [25.0, 200.0, 2.0, 0.0] }
+# 4 = { name = "Scope 2", type = "Oscilloscope" }
+5 = { name = "LFO 3", type = "Oscillator", func = "Sine", knobs = [0.0, 2500.0, 1.0, 0.0] }
+6 = { name = "Scope 3", type = "Oscilloscope" }
+
+7 = { name = "LFO 4", type = "Oscillator", func = "Sine", knobs = [1.0, 1000.0, 1.0, 0.0] }
+8 = { name = "Scope 4", type = "Oscilloscope" }
+9 = { name = "Multiplier", type = "Multiplier" }
+10 = { name = "Scope 5", type = "Oscilloscope" }
+
+[patches]
+1M0O = ["2M0I", "3M1K"]
+3M0O = ["4M0I", "5M1K"]
+5M0O = [
+    # "0M0I",
+    "6M0I",
+    "9M0I",
+]
+7M0O = [
+    # "0M0I",
+    "8M0I",
+    "9M1I",
+]
+9M0O = ["0M0I", "10M0I"]

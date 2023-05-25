@@ -9,6 +9,9 @@ pub struct Multiplier {
     #[serde(default)]
     id: Option<usize>,
     #[serde(default)]
+    name: Option<String>,
+
+    #[serde(default)]
     component: Option<Entity>,
     #[serde(default)]
     children: Vec<Entity>,
@@ -21,12 +24,8 @@ impl Module for Multiplier {
             let mut component = parent.spawn((
                 NodeBundle {
                     style: Style {
-                        position_type: PositionType::Absolute,
-                        position: UiRect {
-                            top: Val::Px(5.0),
-                            left: Val::Px(5.0),
-                            ..default()
-                        },
+                        position_type: PositionType::Relative,
+                        flex_direction: FlexDirection::Column,
                         ..default()
                     },
                     ..default()
@@ -34,19 +33,15 @@ impl Module for Multiplier {
                 ModuleComponent,
             ));
             component.with_children(|parent| {
+                let name = match &self.name {
+                    Some(name) => format!("{name}\n"),
+                    None => format!("M{id} Multiplier\n"),
+                };
                 self.children.push(
                     parent.spawn((
                         TextBundle::from_sections([
-                            TextSection::new(format!("M{id} Multiplier\n"), ts.clone()),
-                        ]).with_style(Style {
-                            position_type: PositionType::Absolute,
-                            position: UiRect {
-                                top: Val::Px(5.0),
-                                left: Val::Px(5.0),
-                                ..default()
-                            },
-                            ..default()
-                        }),
+                            TextSection::new(name, ts),
+                        ]),
                         ModuleTextComponent,
                     )).id()
                 );
@@ -54,8 +49,12 @@ impl Module for Multiplier {
             self.component = Some(component.id());
         });
     }
-    fn is_init(&self) -> bool {
-        self.id.is_some()
+
+    fn id(&self) -> Option<usize> {
+        return self.id;
+    }
+    fn component(&self) -> Option<Entity> {
+        return self.component;
     }
 
     fn inputs(&self) -> usize {
@@ -67,11 +66,6 @@ impl Module for Multiplier {
     fn knobs(&self) -> usize {
         0
     }
-
-    fn get_knobs(&self) -> Vec<f32> {
-        vec![]
-    }
-    fn set_knob(&mut self, _i: usize, _val: f32) {}
 
     fn step(&mut self, _time: f32, ins: &[f32]) -> Vec<f32> {
         vec![

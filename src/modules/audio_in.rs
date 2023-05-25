@@ -5,7 +5,7 @@ use serde::Deserialize;
 use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent};
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Mixer {
+pub struct AudioIn {
     #[serde(default)]
     id: Option<usize>,
     #[serde(default)]
@@ -16,10 +16,13 @@ pub struct Mixer {
     #[serde(default)]
     children: Vec<Entity>,
 
-    knobs: [f32; 2],
+    #[serde(default)]
+    audio_buffer: Vec<f32>,
+
+    knobs: [f32; 1],
 }
 #[typetag::deserialize]
-impl Module for Mixer {
+impl Module for AudioIn {
     fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
         self.id = Some(id);
         ec.with_children(|parent| {
@@ -37,14 +40,13 @@ impl Module for Mixer {
             component.with_children(|parent| {
                 let name = match &self.name {
                     Some(name) => format!("{name}\n"),
-                    None => format!("M{id} Mixer\n"),
+                    None => format!("M{id} Audio In\n"),
                 };
                 self.children.push(
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("K0\n".to_string(), ts.clone()),
-                            TextSection::new("K1\n".to_string(), ts),
+                            TextSection::new("K0\n".to_string(), ts),
                         ]),
                         ModuleTextComponent,
                     )).id()
@@ -62,7 +64,7 @@ impl Module for Mixer {
     }
 
     fn inputs(&self) -> usize {
-        2
+        0
     }
     fn outputs(&self) -> usize {
         1
@@ -78,18 +80,21 @@ impl Module for Mixer {
         self.knobs[i] = val;
     }
 
-    fn step(&mut self, _time: f32, ins: &[f32]) -> Vec<f32> {
-        vec![
-            ins.iter()
-                .zip(self.knobs.iter())
-                .fold(0.0, |a, (inp, k)| a + inp * k)
-        ]
+    fn extend_audio_buffer(&mut self, ai: &[f32]) {
+        self.audio_buffer.extend(ai);
+    }
+
+    fn step(&mut self, _time: f32, _ins: &[f32]) -> Vec<f32> {
+        if !self.audio_buffer.is_empty() {
+            vec![self.audio_buffer.remove(0) * self.knobs[0]]
+        } else {
+            vec![0.0]
+        }
     }
     fn render(&mut self, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("K0 Gain 1: {}\n", self.knobs[0]);
-                text.sections[2].value = format!("K1 Gain 2: {}\n", self.knobs[1]);
+                text.sections[1].value = format!("K0 Gain: {}\n", self.knobs[0]);
             }
         }
     }

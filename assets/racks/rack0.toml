@@ -1,8 +1,8 @@
-patches = [
-    ["0M0O", "1M0I"],
-    ["0M0O", "AO"],
-]
-
 [modules]
-0 = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
-1 = { type = "Oscilloscope" }
+0 = { name = "Audio Out", type = "AudioOut", knobs = [1.0] }
+
+1 = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
+2 = { type = "Oscilloscope" }
+
+[patches]
+1M0O = ["0M0I", "2M0I"]

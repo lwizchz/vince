@@ -18,6 +18,9 @@ pub struct Oscillator {
     #[serde(default)]
     id: Option<usize>,
     #[serde(default)]
+    name: Option<String>,
+
+    #[serde(default)]
     component: Option<Entity>,
     #[serde(default)]
     children: Vec<Entity>,
@@ -33,12 +36,8 @@ impl Module for Oscillator {
             let mut component = parent.spawn((
                 NodeBundle {
                     style: Style {
-                        position_type: PositionType::Absolute,
-                        position: UiRect {
-                            top: Val::Px(5.0),
-                            left: Val::Px(5.0),
-                            ..default()
-                        },
+                        position_type: PositionType::Relative,
+                        flex_direction: FlexDirection::Column,
                         ..default()
                     },
                     ..default()
@@ -46,23 +45,19 @@ impl Module for Oscillator {
                 ModuleComponent,
             ));
             component.with_children(|parent| {
+                let name = match &self.name {
+                    Some(name) => format!("{name}\n"),
+                    None => format!("M{id} Oscillator\n"),
+                };
                 self.children.push(
                     parent.spawn((
                         TextBundle::from_sections([
-                            TextSection::new(format!("M{id} Oscillator\n"), ts.clone()),
+                            TextSection::new(name, ts.clone()),
                             TextSection::new("K0\n".to_string(), ts.clone()),
                             TextSection::new("K1\n".to_string(), ts.clone()),
                             TextSection::new("K2\n".to_string(), ts.clone()),
                             TextSection::new("K3\n".to_string(), ts),
-                        ]).with_style(Style {
-                            position_type: PositionType::Absolute,
-                            position: UiRect {
-                                top: Val::Px(5.0),
-                                left: Val::Px(5.0),
-                                ..default()
-                            },
-                            ..default()
-                        }),
+                        ]),
                         ModuleTextComponent,
                     )).id()
                 );
@@ -70,8 +65,12 @@ impl Module for Oscillator {
             self.component = Some(component.id());
         });
     }
-    fn is_init(&self) -> bool {
-        self.id.is_some()
+
+    fn id(&self) -> Option<usize> {
+        return self.id;
+    }
+    fn component(&self) -> Option<Entity> {
+        return self.component;
     }
 
     fn inputs(&self) -> usize {
@@ -81,7 +80,7 @@ impl Module for Oscillator {
         1
     }
     fn knobs(&self) -> usize {
-        2
+        self.knobs.len()
     }
 
     fn get_knobs(&self) -> Vec<f32> {
@@ -109,10 +108,10 @@ impl Module for Oscillator {
     fn render(&mut self, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("K0 Shift {}\n", self.knobs[0]);
-                text.sections[2].value = format!("K1 Speed {}\n", self.knobs[1]);
-                text.sections[3].value = format!("K2 Depth {}\n", self.knobs[2]);
-                text.sections[4].value = format!("K3 Phase {}\n", self.knobs[3]);
+                text.sections[1].value = format!("K0 Shift: {}\n", self.knobs[0]);
+                text.sections[2].value = format!("K1 Speed: {}\n", self.knobs[1]);
+                text.sections[3].value = format!("K2 Depth: {}\n", self.knobs[2]);
+                text.sections[4].value = format!("K3 Phase: {}\n", self.knobs[3]);
             }
         }
     }

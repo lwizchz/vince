@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::{Mesh2dHandle, MaterialMesh2dBundle}, render::{render_resource::{PrimitiveTopology, Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}, view::RenderLayers, camera::RenderTarget}, core_pipeline::clear_color::ClearColorConfig};
 
 use serde::Deserialize;
@@ -9,6 +11,9 @@ pub struct Oscilloscope {
     #[serde(default)]
     id: Option<usize>,
     #[serde(default)]
+    name: Option<String>,
+
+    #[serde(default)]
     component: Option<Entity>,
     #[serde(default)]
     mesh: Option<Entity>,
@@ -16,43 +21,51 @@ pub struct Oscilloscope {
     children: Vec<Entity>,
 
     #[serde(default)]
+    max_t: Option<f32>,
+    #[serde(default)]
     max_val: Option<f32>,
     #[serde(default)]
-    vals: Vec<(f32, f32)>,
+    vals: VecDeque<(f32, f32)>,
 }
 impl Oscilloscope {
     const WIDTH: f32 = 150.0;
     const HEIGHT: f32 = 100.0;
-    const MAX_LEN: usize = 64;
+    const MAX_LEN: usize = 2048;
 
     fn gen_points(&mut self) -> Vec<Vec3> {
-        if self.vals.is_empty() {
-            return vec![];
-        }
-
-        let t0 = self.vals.first().unwrap().0;
-        let (max_t, mut max_val) = self.vals.iter()
-            .fold((0.0f32, 0.0f32), |mut a, (t, v)| {
-                if *t > a.0 {
-                    a.0 = *t;
+        match self.vals.front() {
+            Some((t0, _)) => {
+                let (mut max_t, mut max_val) = self.vals.iter()
+                    .fold((0.0f32, 0.0f32), |mut a, (t, v)| {
+                        if *t - t0 > a.0 {
+                            a.0 = *t - t0;
+                        }
+                        if v.abs() > a.1 {
+                            a.1 = v.abs();
+                        }
+                        a
+                    });
+                if let Some(mt) = self.max_t {
+                    if mt > max_t {
+                        max_t = mt;
+                    }
                 }
-                if v.abs() > a.1 {
-                    a.1 = v.abs();
+                if let Some(mv) = self.max_val {
+                    if mv > max_val {
+                        max_val = mv;
+                    }
                 }
-                a
-            });
-        if let Some(mv) = self.max_val {
-            if mv > max_val {
-                max_val = mv;
-            }
+                self.max_t = Some(max_t);
+                self.max_val = Some(max_val);
+                self.vals.iter()
+                    .map(|(t, v)| Vec3 {
+                        x: (t - t0) * Self::WIDTH / max_t,
+                        y: v * Self::HEIGHT / max_val,
+                        z: 0.0,
+                    }).collect::<Vec<Vec3>>()
+            },
+            None => vec![],
         }
-        self.max_val = Some(max_val);
-        self.vals.iter()
-            .map(|(t, v)| Vec3 {
-                x: (t - t0) * Self::WIDTH / (max_t - t0),
-                y: v * Self::HEIGHT / max_val,
-                z: 0.0,
-            }).collect::<Vec<Vec3>>()
     }
 }
 #[typetag::deserialize]
@@ -82,11 +95,11 @@ impl Module for Oscilloscope {
         let image_handle = images.add(image);
 
         let layer = RenderLayers::layer((id+1) as u8);
+        let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.gen_points());
         self.mesh = Some(ec.commands().spawn((
             MaterialMesh2dBundle {
-                mesh: Mesh2dHandle(meshes.add(Mesh::from(LineStrip {
-                    points: self.gen_points(),
-                }))),
+                mesh: Mesh2dHandle(meshes.add(mesh)),
                 material: materials.add(ColorMaterial::from(Color::GREEN)),
                 transform: Transform::from_xyz(-Self::WIDTH/2.0, 0.0, 0.0)
                     .with_scale(Vec3 {
@@ -102,7 +115,7 @@ impl Module for Oscilloscope {
         ec.commands().spawn((
             Camera2dBundle {
                 camera_2d: Camera2d {
-                    clear_color: ClearColorConfig::Custom(Color::NONE),
+                    clear_color: ClearColorConfig::Custom(Color::BLACK),
                 },
                 camera: Camera {
                     order: -1,
@@ -122,12 +135,8 @@ impl Module for Oscilloscope {
             let mut component = parent.spawn((
                 NodeBundle {
                     style: Style {
-                        position_type: PositionType::Absolute,
-                        position: UiRect {
-                            top: Val::Px(5.0),
-                            left: Val::Px(5.0),
-                            ..default()
-                        },
+                        position_type: PositionType::Relative,
+                        flex_direction: FlexDirection::Column,
                         ..default()
                     },
                     ..default()
@@ -135,20 +144,16 @@ impl Module for Oscilloscope {
                 ModuleComponent,
             ));
             component.with_children(|parent| {
+                let name = match &self.name {
+                    Some(name) => format!("{name}\n"),
+                    None => format!("M{id} Oscilloscope\n"),
+                };
                 self.children.push(
                     parent.spawn((
                         TextBundle::from_sections([
-                            TextSection::new(format!("M{id} Oscilloscope\n"), ts.clone()),
+                            TextSection::new(name, ts.clone()),
                             TextSection::new("LEVEL".to_string(), ts),
-                        ]).with_style(Style {
-                            position_type: PositionType::Absolute,
-                            position: UiRect {
-                                top: Val::Px(5.0),
-                                left: Val::Px(5.0),
-                                ..default()
-                            },
-                            ..default()
-                        }),
+                        ]),
                         ModuleTextComponent,
                     )).id()
                 );
@@ -157,12 +162,8 @@ impl Module for Oscilloscope {
                     parent.spawn((
                         ImageBundle {
                             style: Style {
-                                position_type: PositionType::Absolute,
-                                position: UiRect {
-                                    top: Val::Px(Self::HEIGHT/2.0 + 5.0),
-                                    left: Val::Px(0.0),
-                                    ..default()
-                                },
+                                position_type: PositionType::Relative,
+                                position: UiRect::top(Val::Px(10.0)),
                                 size: Size::new(Val::Px(Self::WIDTH), Val::Px(Self::HEIGHT)),
                                 ..default()
                             },
@@ -176,12 +177,14 @@ impl Module for Oscilloscope {
             self.component = Some(component.id());
         });
 
-        self.vals = vec![];
-        self.vals.reserve(Self::MAX_LEN);
-        self.vals.push((0.0, 0.0));
+        self.vals = VecDeque::with_capacity(512);
     }
-    fn is_init(&self) -> bool {
-        self.id.is_some()
+
+    fn id(&self) -> Option<usize> {
+        return self.id;
+    }
+    fn component(&self) -> Option<Entity> {
+        return self.component;
     }
 
     fn inputs(&self) -> usize {
@@ -194,25 +197,35 @@ impl Module for Oscilloscope {
         0
     }
 
-    fn get_knobs(&self) -> Vec<f32> {
-        vec![]
-    }
-    fn set_knob(&mut self, _i: usize, _val: f32) {}
-
     fn step(&mut self, time: f32, ins: &[f32]) -> Vec<f32> {
         let val = ins[0];
 
-        if self.vals.len() == Self::MAX_LEN {
+        let zs = self.vals.iter()
+            .fold((0usize, None::<&(f32, f32)>), |a, v1| {
+                match a.1 {
+                    Some(v0) => {
+                        if v0.1.signum() != v1.1.signum() {
+                            (a.0+1, Some(v1))
+                        } else {
+                            (a.0, Some(v1))
+                        }
+                    },
+                    None => (0, Some(v1)),
+                }
+            }).0;
+        if zs >= 14 {
+            self.vals.remove(0);
+        } else if self.vals.len() > Self::MAX_LEN {
             self.vals.remove(0);
         }
-        self.vals.push((time, val));
+        self.vals.push_back((time, val));
 
         vec![]
     }
     fn render(&mut self, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
-                let val = self.vals.last().unwrap();
+                let val = self.vals.back().unwrap_or(&(0.0, 0.0));
                 text.sections[1].value = format!("{}", val.1);
             }
         }
@@ -226,16 +239,5 @@ impl Module for Oscilloscope {
                 }
             }
         }
-    }
-}
-#[derive(Debug, Clone)]
-pub struct LineStrip {
-    pub points: Vec<Vec3>,
-}
-impl From<LineStrip> for Mesh {
-    fn from(line: LineStrip) -> Self {
-        let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, line.points);
-        mesh
     }
 }

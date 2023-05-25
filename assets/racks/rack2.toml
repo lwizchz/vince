@@ -1,0 +1,17 @@
+[modules]
+0 = { type = "AudioOut", knobs = [1.0] }
+1 = { type = "AudioIn", knobs = [1.0] }
+2 = { type = "Oscilloscope" }
+
+3 = { type = "Oscillator", func = "Sine", knobs = [0.0, 880.0, 1.0, 0.0] }
+4 = { type = "Oscilloscope" }
+
+[patches]
+1M0O = [
+    "2M0I",
+    "3M2K",
+]
+3M0O = [
+    "0M0I",
+    "4M0I",
+]
