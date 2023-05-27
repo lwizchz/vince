@@ -6,7 +6,7 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug, Clone)]
 pub struct Patches(HashMap<String, HashSet<String>>);
 impl Patches {
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (&'a str, &'a str)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&'_ str, &'_ str)> {
         self.0.iter()
             .flat_map(|(output, inputs)| {
                 inputs.iter()

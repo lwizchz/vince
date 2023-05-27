@@ -1,8 +1,8 @@
-use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
+use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
 
-use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent};
+use crate::modules::{Module, ModuleComponent, ModuleTextComponent};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Multiplier {
@@ -51,10 +51,10 @@ impl Module for Multiplier {
     }
 
     fn id(&self) -> Option<usize> {
-        return self.id;
+        self.id
     }
     fn component(&self) -> Option<Entity> {
-        return self.component;
+        self.component
     }
 
     fn inputs(&self) -> usize {
@@ -72,8 +72,5 @@ impl Module for Multiplier {
             ins.iter()
                 .product()
         ]
-    }
-    fn render(&mut self, _meshes: &mut ResMut<Assets<Mesh>>, _q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
-
     }
 }

@@ -1,4 +1,5 @@
 #![feature(type_alias_impl_trait)]
+#![feature(impl_trait_in_assoc_type)]
 
 use std::time::Duration;
 use std::env;
@@ -14,7 +15,7 @@ pub mod patch;
 use patch::PatchComponent;
 
 pub mod modules;
-use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent};
+use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent};
 
 #[cfg(debug_assertions)]
 const DOWNSAMPLE: u64 = 2;
@@ -46,7 +47,7 @@ fn main() {
         .add_system(setup_patches.run_if(in_state(AppState::Loaded)))
         .add_system(rack_reloader.run_if(in_state(AppState::Ready)))
         .add_system(rack_stepper.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
-        .add_system(rack_render.run_if(in_state(AppState::Ready)))
+        .add_system(rack_render.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(bevy::window::close_on_esc)
         .insert_resource(FixedTime::new_from_secs(1.0 / f32::from(FRAME_RATE)))
         .run();
@@ -116,9 +117,15 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
                     parent.spawn((
                         NodeBundle {
                             style: Style {
-                                size: Size {
-                                    width: Val::Px(170.0),
-                                    height: Val::Px(200.0),
+                                size: match m.1.is_large() {
+                                    true => Size {
+                                        width: Val::Px(660.0),
+                                        height: Val::Px(550.0),
+                                    },
+                                    false => Size {
+                                        width: Val::Px(170.0),
+                                        height: Val::Px(200.0),
+                                    },
                                 },
                                 margin: UiRect::all(Val::Px(5.0)),
                                 padding: UiRect::all(Val::Px(10.0)),
@@ -249,8 +256,8 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut
         }
     }
 }
-fn rack_render(mut racks: ResMut<Assets<Rack>>, mut meshes: ResMut<Assets<Mesh>>, h_rack: ResMut<RackHandle>, mut q_text: Query<&mut Text, With<ModuleTextComponent>>, mut q_mesh: Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+fn rack_render(mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, h_rack: ResMut<RackHandle>, mut q_text: Query<&mut Text, With<ModuleTextComponent>>, mut q_image: Query<&mut UiImage, With<ModuleImageComponent>>, mut q_mesh: Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
     if let Some(rack) = racks.get_mut(&h_rack.0) {
-        rack.render(&mut meshes, &mut q_text, &mut q_mesh);
+        rack.render(&mut images, &mut meshes, &mut q_text, &mut q_image, &mut q_mesh);
     }
 }

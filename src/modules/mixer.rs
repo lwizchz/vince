@@ -2,7 +2,7 @@ use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
 
-use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent};
+use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Mixer {
@@ -55,10 +55,10 @@ impl Module for Mixer {
     }
 
     fn id(&self) -> Option<usize> {
-        return self.id;
+        self.id
     }
     fn component(&self) -> Option<Entity> {
-        return self.component;
+        self.component
     }
 
     fn inputs(&self) -> usize {
@@ -85,7 +85,7 @@ impl Module for Mixer {
                 .fold(0.0, |a, (inp, k)| a + inp * k)
         ]
     }
-    fn render(&mut self, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
                 text.sections[1].value = format!("K0 Gain 1: {}\n", self.knobs[0]);

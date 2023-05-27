@@ -4,7 +4,11 @@ use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
 
-use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent};
+use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent, video_out::VideoOut};
+
+const fn _default_true() -> bool {
+    true
+}
 
 #[derive(Default, Deserialize, Debug, Clone)]
 enum OscillatorFunc {
@@ -12,6 +16,14 @@ enum OscillatorFunc {
     Sine,
     Triangle,
     Square,
+    Saw,
+}
+#[derive(Default, Deserialize, Debug, Clone)]
+enum OscillatorSync {
+    #[default]
+    None,
+    Horizontal,
+    Vertical,
 }
 #[derive(Default, Deserialize, Debug, Clone)]
 pub struct Oscillator {
@@ -24,6 +36,13 @@ pub struct Oscillator {
     component: Option<Entity>,
     #[serde(default)]
     children: Vec<Entity>,
+
+    #[serde(default)]
+    sync: OscillatorSync,
+    #[serde(default)]
+    sync_phase: f32,
+    #[serde(default)]
+    sync_count: usize,
 
     func: OscillatorFunc,
     knobs: [f32; 4],
@@ -53,6 +72,8 @@ impl Module for Oscillator {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
+                            TextSection::new("Func\n".to_string(), ts.clone()),
+                            TextSection::new("Sync\n".to_string(), ts.clone()),
                             TextSection::new("K0\n".to_string(), ts.clone()),
                             TextSection::new("K1\n".to_string(), ts.clone()),
                             TextSection::new("K2\n".to_string(), ts.clone()),
@@ -67,10 +88,10 @@ impl Module for Oscillator {
     }
 
     fn id(&self) -> Option<usize> {
-        return self.id;
+        self.id
     }
     fn component(&self) -> Option<Entity> {
-        return self.component;
+        self.component
     }
 
     fn inputs(&self) -> usize {
@@ -95,23 +116,54 @@ impl Module for Oscillator {
         let shift = self.knobs[0];
         let speed = self.knobs[1];
         let depth = self.knobs[2];
-        let phase = self.knobs[3];
+
+        // FIXME video sync
+        match self.sync {
+            OscillatorSync::None => self.sync_phase = 0.0,
+            OscillatorSync::Horizontal => { // Reset every frame
+                if self.sync_count % (VideoOut::WIDTH as usize * VideoOut::HEIGHT as usize) == 0 {
+                    self.sync_phase = match self.func {
+                        OscillatorFunc::Saw => t,
+                        _ => speed * t,
+                    };
+                    self.sync_count = 0;
+                }
+            },
+            OscillatorSync::Vertical => { // Reset every line
+                if self.sync_count % (VideoOut::WIDTH as usize) == 0 {
+                    self.sync_phase = match self.func {
+                        OscillatorFunc::Saw => t,
+                        _ => speed * t,
+                    };
+                    self.sync_count = 0;
+                }
+            },
+        }
+        let phase = self.knobs[3] + self.sync_phase;
 
         let val = match self.func {
-            OscillatorFunc::Sine => (speed * t * 2.0*PI - phase).sin() * depth + shift,
-            OscillatorFunc::Triangle => 2.0 * depth / PI * ((speed * t * 2.0*PI - phase).sin()).asin() + shift,
-            OscillatorFunc::Square => if ((speed * t * 2.0*PI - phase).sin() * depth) > 0.0 { depth+shift } else { -depth+shift },
+            OscillatorFunc::Sine => (speed * t - phase).sin() * depth / 2.0 + shift,
+            OscillatorFunc::Triangle => 1.0 / PI * depth * ((speed * t - phase).sin()).asin() + shift,
+            OscillatorFunc::Square => if (speed * t - phase).sin() >= 0.0 { depth/2.0+shift } else { -depth/2.0+shift },
+            OscillatorFunc::Saw => {
+                let tp = (t - phase) * speed / 2.0 / PI;
+                (tp - (0.5 + tp).floor()) * depth + shift
+            },
         };
+
+        self.sync_count += 1;
 
         vec![val]
     }
-    fn render(&mut self, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("K0 Shift: {}\n", self.knobs[0]);
-                text.sections[2].value = format!("K1 Speed: {}\n", self.knobs[1]);
-                text.sections[3].value = format!("K2 Depth: {}\n", self.knobs[2]);
-                text.sections[4].value = format!("K3 Phase: {}\n", self.knobs[3]);
+                text.sections[1].value = format!("Func: {:?}\n", self.func);
+                text.sections[2].value = format!("Sync: {:?}\n", self.sync);
+                text.sections[3].value = format!("K0 Shift: {}\n", self.knobs[0]);
+                text.sections[4].value = format!("K1 Speed: {}\n", self.knobs[1]);
+                text.sections[5].value = format!("K2 Depth: {}\n", self.knobs[2]);
+                text.sections[6].value = format!("K3 Phase: {}\n", self.knobs[3]);
             }
         }
     }

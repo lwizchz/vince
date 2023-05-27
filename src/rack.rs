@@ -8,7 +8,7 @@ use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use serde::Deserialize;
 
 use crate::DOWNSAMPLE;
-use crate::{patch::Patches, modules::{Module, ModuleTextComponent, ModuleMeshComponent}};
+use crate::{patch::Patches, modules::{Module, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 pub struct AudioContextOutput {
     _device: cpal::Device,
@@ -156,14 +156,14 @@ impl Rack {
                     if inpatches.iter()
                         .all(|p| {
                             outs.iter()
-                                .any(|o| o.0 == &p.0)
+                                .any(|o| o.0 == p.0)
                         })
                     {
                         let mut mins = vec![0.0; m.inputs()];
 
                         for p in inpatches {
                             match outs.iter()
-                                .find(|o| o.0 == &p.0)
+                                .find(|o| o.0 == p.0)
                             {
                                 Some(o) => {
                                     let i = &p.1[(format!("{idx}M").len())..(p.1.len() - 1)]
@@ -248,7 +248,7 @@ impl Rack {
                 .filter(|p| p.1.starts_with(&format!("{idx}M")))
                 .collect();
             for p in inpatches {
-                if let Some(o) = outs.iter().find(|o| o.0 == &p.0) {
+                if let Some(o) = outs.iter().find(|o| o.0 == p.0) {
                     let i = &p.1[(format!("{idx}M").len())..(p.1.len() - 1)]
                         .parse::<usize>().expect("failed to parse patch input index");
                     if p.1.ends_with('K') {
@@ -262,9 +262,9 @@ impl Rack {
             }
         }
     }
-    pub fn render(&mut self, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    pub fn render(&mut self, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         for m in self.modules.values_mut() {
-            m.render(meshes, q_text, q_mesh);
+            m.render(images, meshes, q_text, q_image, q_mesh);
         }
     }
 }

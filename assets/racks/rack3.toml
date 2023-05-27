@@ -1,0 +1,17 @@
+[modules]
+0 = { type = "VideoOut" }
+
+1 = { name = "Luma", type = "Oscillator", func = "Square", sync = "Horizontal", knobs = [0.5, 7.5, 1.0, 0.0] }
+2 = { type = "Oscilloscope" }
+3 = { name = "Chroma", type = "Oscillator", func = "Square", sync = "Vertical", knobs = [0.0, 10000.0, 1.0, 0.0] }
+4 = { type = "Oscilloscope" }
+
+[patches]
+1M0O = [
+    "0M0I",
+    "2M0I",
+]
+3M0O = [
+    "0M1I",
+    "4M0I",
+]

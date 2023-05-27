@@ -181,10 +181,10 @@ impl Module for Oscilloscope {
     }
 
     fn id(&self) -> Option<usize> {
-        return self.id;
+        self.id
     }
     fn component(&self) -> Option<Entity> {
-        return self.component;
+        self.component
     }
 
     fn inputs(&self) -> usize {
@@ -213,16 +213,14 @@ impl Module for Oscilloscope {
                     None => (0, Some(v1)),
                 }
             }).0;
-        if zs >= 14 {
-            self.vals.remove(0);
-        } else if self.vals.len() > Self::MAX_LEN {
+        if zs >= 14 || self.vals.len() > Self::MAX_LEN {
             self.vals.remove(0);
         }
         self.vals.push_back((time, val));
 
         vec![]
     }
-    fn render(&mut self, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
                 let val = self.vals.back().unwrap_or(&(0.0, 0.0));
