@@ -10,6 +10,7 @@ pub mod video_out;
 pub mod mixer;
 pub mod multiplier;
 pub mod oscillator;
+pub mod noise;
 pub mod oscilloscope;
 
 #[typetag::deserialize(tag = "type")]

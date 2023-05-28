@@ -11,5 +11,6 @@ bevy_common_assets = { version = "0.6.0", features = ["toml"] }
 bevy_framepace = "0.12.1"
 cpal = "0.15.2"
 oddio = "0.6.2"
+rand = "0.8.5"
 serde = "1.0.163"
 typetag = "0.2.8"
