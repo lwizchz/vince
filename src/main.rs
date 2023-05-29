@@ -59,7 +59,17 @@ example.
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 
-// #![warn(clippy::pedantic)]
+#![deny(rust_2018_idioms)]
+#![allow(elided_lifetimes_in_paths)]
+
+#![allow(clippy::too_many_lines)]
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::needless_pass_by_value)]
+
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 use std::time::Duration;
 use std::env;
@@ -78,9 +88,9 @@ pub mod modules;
 use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent};
 
 #[cfg(debug_assertions)]
-const DOWNSAMPLE: u64 = 8;
+const DOWNSAMPLE: u32 = 8;
 #[cfg(not(debug_assertions))]
-const DOWNSAMPLE: u64 = 1;
+const DOWNSAMPLE: u32 = 1;
 
 const FRAME_RATE: u16 = 60;
 static mut AUDIO_OUTPUT_STREAM: Option<cpal::Stream> = None;
@@ -177,15 +187,16 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
                     parent.spawn((
                         NodeBundle {
                             style: Style {
-                                size: match m.1.is_large() {
-                                    true => Size {
+                                size: if m.1.is_large() {
+                                    Size {
                                         width: Val::Px(660.0),
                                         height: Val::Px(550.0),
-                                    },
-                                    false => Size {
+                                    }
+                                } else {
+                                    Size {
                                         width: Val::Px(170.0),
                                         height: Val::Px(200.0),
-                                    },
+                                    }
                                 },
                                 margin: UiRect::all(Val::Px(5.0)),
                                 padding: UiRect::all(Val::Px(10.0)),
@@ -313,17 +324,17 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut
     if let Some(rack) = racks.get_mut(&h_rack.0) {
         if let Some(audio_context) = &rack.audio_context {
             let t = time.elapsed_seconds_wrapped();
-            let audio_steps = u64::from(audio_context.output.config.sample_rate.0) / u64::from(FRAME_RATE) / DOWNSAMPLE;
-            let ad = Duration::from_micros(1000 * 1000 / audio_steps / u64::from(FRAME_RATE)).as_secs_f32();
+            let audio_steps = audio_context.output.config.sample_rate.0 / u32::from(FRAME_RATE) / DOWNSAMPLE;
+            let ad = Duration::from_micros(1000 * 1000 / u64::from(audio_steps) / u64::from(FRAME_RATE)).as_secs_f64();
 
             let video_steps = 209 / DOWNSAMPLE;
-            let _vd = Duration::from_nanos(1000 * 1000 * 1000 / audio_steps / video_steps / u64::from(FRAME_RATE)).as_secs_f32();
+            let _vd = Duration::from_nanos(1000 * 1000 * 1000 / u64::from(audio_steps) / u64::from(video_steps) / u64::from(FRAME_RATE)).as_secs_f64();
 
             rack.step(t, StepType::Key);
             for i in 1..audio_steps {
-                rack.step(t + i as f32 * ad, StepType::Audio);
+                rack.step(t + (f64::from(i) * ad) as f32, StepType::Audio);
                 // for j in 1..video_steps {
-                //     rack.step(t + i as f32 * ad + j as f32 * vd, StepType::Video);
+                //     rack.step(t + (f64::from(i) * ad + f64::from(j) * _vd) as f32, StepType::Video);
                 // }
             }
         } else {

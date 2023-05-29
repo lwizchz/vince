@@ -1,5 +1,5 @@
 /*!
-The AudioOut module takes an input and plays it on the primary audio device,
+The `AudioOut` module takes an input and plays it on the primary audio device,
 after first applying a gain to it.
 
 ## Inputs

@@ -1,5 +1,5 @@
 /*!
-The Scaler module takes an input and scales it, optionally inverting it.
+The `Scaler` module takes an input and scales it, optionally inverting it.
 
 ## Inputs
 0. The original signal
@@ -8,7 +8,7 @@ The Scaler module takes an input and scales it, optionally inverting it.
 1. The scaled signal
 
 ## Knobs
-0. Scale
+0. Scale in the range (-inf, inf)
 
 */
 

@@ -22,6 +22,9 @@ screenshots = { git = "https://github.com/lwizchz/screenshots-rs", optional = tr
 serde = "1.0.163"
 typetag = "0.2.8"
 
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+tikv-jemallocator = "0.5"
+
 [features]
 default = ["video_in"]
 video_in = ["dep:screenshots"]

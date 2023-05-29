@@ -1,13 +1,16 @@
 /*!
-The Luma module takes 3 inputs and converts them from RGB data to Luma.
+The `Luma` module takes 3 inputs and converts them from RGB data to Luma.
 
 ## Inputs
-0. Red channel
-1. Green channel
-2. Blue channel
+0. Red channel in the range [0.0, 1.0]
+1. Green channel in the range [0.0, 1.0]
+2. Blue channel in the range [0.0, 1.0]
 
 ## Outputs
-0. Luma
+0. Luma channel in the range [0.0, 1.0]
+
+##### Note
+If any input is invalid (less than 0.0), the output will be -1.0
 
 ## Knobs
 None

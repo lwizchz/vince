@@ -1,5 +1,5 @@
 /*!
-The Mixer module takes 2 inputs and adds them together, applying a separate
+The `Mixer` module takes 2 inputs and adds them together, applying a separate
 gain to each.
 
 ## Inputs

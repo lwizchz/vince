@@ -1,5 +1,5 @@
 /*!
-The Noise module outputs a noise signal with a given gain.
+The `Noise` module outputs a noise signal with a given gain.
 
 ## Noise Functions
  * `White` - random data from the [rand] crate
@@ -151,11 +151,6 @@ const PERM: [i32; 256] = [
     93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180,
 ];
 fn perlin(mut x: f32) -> f32 {
-    let p: Vec<i32> = PERM.iter()
-        .chain(PERM.iter())
-        .copied()
-        .collect();
-
     fn fade(t: f32) -> f32 {
         t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
     }
@@ -170,22 +165,22 @@ fn perlin(mut x: f32) -> f32 {
         a + t * (b-a)
     }
 
-    let xint = x.floor() as i32 & 255;
-    x -= x.floor();
-    let u = fade(x);
-
-    lerp(
-        u,
-        grad(p[xint as usize], x),
-        grad(p[(xint+1) as usize], x-1.0),
-    )
-}
-fn simplex(x: f32) -> f32 {
     let p: Vec<i32> = PERM.iter()
         .chain(PERM.iter())
         .copied()
         .collect();
 
+    let xint = x.floor() as usize & 255;
+    x -= x.floor();
+    let u = fade(x);
+
+    lerp(
+        u,
+        grad(p[xint], x),
+        grad(p[xint+1], x-1.0),
+    )
+}
+fn simplex(x: f32) -> f32 {
     fn grad(hash: i32, x: f32) -> f32 {
         let h = hash & 15;
         let g = 1.0 + (h & 7) as f32;
@@ -196,16 +191,21 @@ fn simplex(x: f32) -> f32 {
         }
     }
 
-    let i0 = x.floor();
-    let i1 = i0 + 1.0;
-    let x0 = x - i0;
+    let p: Vec<i32> = PERM.iter()
+        .chain(PERM.iter())
+        .copied()
+        .collect();
+
+    let i0 = x.floor() as usize;
+    let i1 = i0 + 1;
+    let x0 = x - i0 as f32;
     let x1 = x0 - 1.0;
 
     let t0 = (1.0 - x0 * x0).powi(2);
-    let n0 = t0 * t0 * grad(p[i0 as usize & 255], x0);
+    let n0 = t0 * t0 * grad(p[i0 & 255], x0);
 
     let t1 = (1.0 - x1 * x1).powi(2);
-    let n1 = t1 * t1 * grad(p[i1 as usize & 255], x1);
+    let n1 = t1 * t1 * grad(p[i1 & 255], x1);
 
     0.395 * (n0+n1)
 }

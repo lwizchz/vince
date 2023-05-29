@@ -1,5 +1,5 @@
 /*!
-The Oscilloscope module takes an input and displays it as a graph of values
+The `Oscilloscope` module takes an input and displays it as a graph of values
 over time.
 
 ## Inputs
@@ -105,7 +105,7 @@ impl Module for Oscilloscope {
         image.resize(size);
         let image_handle = images.add(image);
 
-        let layer = RenderLayers::layer((id+1) as u8);
+        let layer = RenderLayers::layer(((id+1) % 255) as u8);
         let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.gen_points());
         self.mesh = Some(ec.commands().spawn((
@@ -219,10 +219,10 @@ impl Module for Oscilloscope {
             .fold((0usize, None::<&(f32, f32)>), |a, v1| {
                 match a.1 {
                     Some(v0) => {
-                        if v0.1.signum() != v1.1.signum() {
-                            (a.0+1, Some(v1))
-                        } else {
+                        if v0.1.signum() == v1.1.signum() {
                             (a.0, Some(v1))
+                        } else {
+                            (a.0+1, Some(v1))
                         }
                     },
                     None => (0, Some(v1)),

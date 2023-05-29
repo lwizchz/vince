@@ -1,5 +1,5 @@
 /*!
-The AudioIn module outputs a signal from the primary audio device, after first
+The `AudioIn` module outputs a signal from the primary audio device, after first
 applying a gain to it.
 
 ## Inputs
@@ -104,10 +104,10 @@ impl Module for AudioIn {
             return vec![0.0];
         }
 
-        if !self.audio_buffer.is_empty() {
-            vec![self.audio_buffer.remove(0) * self.knobs[0]]
-        } else {
+        if self.audio_buffer.is_empty() {
             vec![0.0]
+        } else {
+            vec![self.audio_buffer.remove(0) * self.knobs[0]]
         }
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {

@@ -1,5 +1,5 @@
 /*!
-The ComponentVideoOut module takes 3 inputs and displays them as RGB data on a
+The `ComponentVideoOut` module takes 3 inputs and displays them as RGB data on a
 [640](ComponentVideoOut::WIDTH)x[480](ComponentVideoOut::HEIGHT) screen.
 
 ## Inputs

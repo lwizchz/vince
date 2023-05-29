@@ -1,5 +1,5 @@
 /*!
-The VideoIn module outputs 3 signals as RGB data from a given video source.
+The `VideoIn` module outputs 3 signals as RGB data from a given video source.
 
 ## Video Sources
  * `Screen` - Output video from a region on the screen (currently hard-coded as
@@ -18,6 +18,9 @@ None
 0. Gamma-corrected red channel in the range [0.0, 1.0]
 1. Gamma-corrected green channel in the range [0.0, 1.0]
 2. Gamma-corrected blue channel in the range [0.0, 1.0]
+
+##### Note
+If the video buffer becomes empty, the outputs will all be -1.0
 
 ## Knobs
 None
@@ -128,14 +131,13 @@ impl Module for VideoIn {
 
     fn step(&mut self, _time: f32, ft: StepType, _ins: &[f32]) -> Vec<f32> {
         // Fetch video input
-        match ft {
-            StepType::Key => match &mut self.source {
+        if ft == StepType::Key {
+            match &mut self.source {
                 VideoSource::Screen(screen) => {
                     if screen.is_none() {
                         *screen = Some(ScreenSource {
-                            screen: Screen::all().expect("Failed to get screens for video input")
-                                .first().expect("Failed to get screens for video input")
-                                .clone(),
+                            screen: *Screen::all().expect("Failed to get screens for video input")
+                                .first().expect("Failed to get screens for video input"),
                             images: Arc::new(Mutex::new(vec![])),
                         });
                     }
@@ -152,8 +154,7 @@ impl Module for VideoIn {
                         });
                     }
                 },
-            },
-            _ => {},
+            }
         }
 
         // Process video input to buffer
@@ -173,19 +174,19 @@ impl Module for VideoIn {
         }
 
         // Pop output from buffer
-        if !self.video_buffer.is_empty() {
-            let b = self.video_buffer.pop_front().unwrap() as f32 / 255.0;
-            let g = self.video_buffer.pop_front().unwrap() as f32 / 255.0;
-            let r = self.video_buffer.pop_front().unwrap() as f32 / 255.0;
-            let _a = self.video_buffer.pop_front().unwrap() as f32 / 255.0;
+        if self.video_buffer.is_empty() {
+            vec![-1.0, -1.0, -1.0]
+        } else {
+            let b = f32::from(self.video_buffer.pop_front().unwrap()) / 255.0;
+            let g = f32::from(self.video_buffer.pop_front().unwrap()) / 255.0;
+            let r = f32::from(self.video_buffer.pop_front().unwrap()) / 255.0;
+            let _a = f32::from(self.video_buffer.pop_front().unwrap()) / 255.0;
 
             let er = r.powf(VideoIn::GAMMA);
             let eg = g.powf(VideoIn::GAMMA);
             let eb = b.powf(VideoIn::GAMMA);
 
             vec![er, eg, eb]
-        } else {
-            vec![-1.0, -1.0, -1.0]
         }
     }
 }

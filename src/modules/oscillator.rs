@@ -1,5 +1,5 @@
 /*!
-The Oscillator module outputs a generated wave with a given gain.
+The `Oscillator` module outputs a generated wave with a given gain.
 
 ## Wave Functions
  * `Sine` - a smooth wave

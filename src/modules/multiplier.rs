@@ -1,5 +1,5 @@
 /*!
-The Multiplier module takes 2 inputs and multiplies them together.
+The `Multiplier` module takes 2 inputs and multiplies them together.
 
 ## Inputs
 0. First signal
