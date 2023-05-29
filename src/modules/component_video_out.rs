@@ -1,3 +1,20 @@
+/*!
+The ComponentVideoOut module takes 3 inputs and displays them as RGB data on a
+[640](ComponentVideoOut::WIDTH)x[480](ComponentVideoOut::HEIGHT) screen.
+
+## Inputs
+0. Red channel
+1. Green channel
+2. Blue channel
+
+## Outputs
+None
+
+## Knobs
+None
+
+*/
+
 use std::collections::VecDeque;
 
 use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::Mesh2dHandle, render::{render_resource::{Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}}};
@@ -141,6 +158,10 @@ impl Module for ComponentVideoOut {
         let r = ins[0];
         let g = ins[1];
         let b = ins[2];
+
+        if r < 0.0 || g < 0.0 || b < 0.0 {
+            return vec![];
+        }
 
         if self.rgb.len() > Self::MAX_LEN {
             self.rgb.remove(0);

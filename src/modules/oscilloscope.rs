@@ -1,3 +1,18 @@
+/*!
+The Oscilloscope module takes an input and displays it as a graph of values
+over time.
+
+## Inputs
+0. The signal to graph
+
+## Outputs
+None
+
+## Knobs
+None
+
+*/
+
 use std::collections::VecDeque;
 
 use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::{Mesh2dHandle, MaterialMesh2dBundle}, render::{render_resource::{PrimitiveTopology, Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}, view::RenderLayers, camera::RenderTarget}, core_pipeline::clear_color::ClearColorConfig};
@@ -21,9 +36,9 @@ pub struct Oscilloscope {
     children: Vec<Entity>,
 
     #[serde(default)]
-    max_t: Option<f32>,
+    max_t: f32,
     #[serde(default)]
-    max_val: Option<f32>,
+    max_val: f32,
     #[serde(default)]
     vals: VecDeque<(f32, f32)>,
 }
@@ -45,18 +60,14 @@ impl Oscilloscope {
                         }
                         a
                     });
-                if let Some(mt) = self.max_t {
-                    if mt > max_t {
-                        max_t = mt;
-                    }
+                if self.max_t > max_t {
+                    max_t = self.max_t;
                 }
-                if let Some(mv) = self.max_val {
-                    if mv > max_val {
-                        max_val = mv;
-                    }
+                if self.max_val > max_val {
+                    max_val = self.max_val;
                 }
-                self.max_t = Some(max_t);
-                self.max_val = Some(max_val);
+                self.max_t = max_t;
+                self.max_val = max_val;
                 self.vals.iter()
                     .map(|(t, v)| Vec3 {
                         x: (t - t0) * Self::WIDTH / max_t,

@@ -1,3 +1,24 @@
+/*!
+The Noise module outputs a noise signal with a given gain.
+
+## Noise Functions
+ * `White` - random data from the [rand] crate
+ * <strike>`Fractional(f32)` - white noise with a fractional frequency spectrum
+   </strike> Not yet supported
+ * `Perlin` - smoothed 1-dimensional Perlin noise
+ * `Simplex` - smoothed 1-dimensional Simplex noise
+
+## Inputs
+None
+
+## Outputs
+0. The noise signal in the range [-K0, K0] where K0 is knob 0
+
+## Knobs
+0. Gain in the range [0.0, 1.0]
+
+*/
+
 use rand::prelude::*;
 
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};

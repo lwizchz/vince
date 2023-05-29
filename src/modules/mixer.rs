@@ -1,3 +1,20 @@
+/*!
+The Mixer module takes 2 inputs and adds them together, applying a separate
+gain to each.
+
+## Inputs
+0. First signal
+1. Second signal
+
+## Outputs
+0. The combined signal
+
+## Knobs
+0. Gain for Input 0 in the range [0.0, 1.0]
+1. Gain for Input 1 in the range [0.0, 1.0]
+
+*/
+
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
@@ -84,9 +101,7 @@ impl Module for Mixer {
         }
 
         vec![
-            ins.iter()
-                .zip(self.knobs.iter())
-                .fold(0.0, |a, (inp, k)| a + inp * k)
+            ins[0] * self.knobs[0] + ins[1] * self.knobs[1]
         ]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {

@@ -1,3 +1,19 @@
+/*!
+The CompositeVideoOut modules takes 2 inputs and displays them as Luma & Chroma
+on a [640](CompositeVideoOut::WIDTH)x[480](CompositeVideoOut::HEIGHT) screen.
+
+## Inputs
+0. Luma
+1. Chroma
+
+## Outputs
+None
+
+## Knobs
+None
+
+*/
+
 use std::collections::VecDeque;
 
 use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::Mesh2dHandle, render::{render_resource::{Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}}};
@@ -141,12 +157,17 @@ impl Module for CompositeVideoOut {
 
     fn step(&mut self, time: f32, _ft: StepType, ins: &[f32]) -> Vec<f32> {
         let y = ins[0];
+        let c = ins[1];
+
+        if y < 0.0 || c < 0.0 {
+            return vec![];
+        }
+
         if self.luma.len() > Self::MAX_LEN {
             self.luma.remove(0);
         }
         self.luma.push_back((time, y));
 
-        let c = ins[1];
         if self.chroma.len() > Self::MAX_LEN {
             self.chroma.remove(0);
         }

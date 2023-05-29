@@ -2,6 +2,12 @@
 name = "vince"
 version = "0.1.0"
 edition = "2021"
+authors = ["Louise Montalvo <louanmontalvo@gmail.com>"]
+license = "MIT"
+description = "An audio-video synthesizer"
+readme = true
+repository = "https://github.com/lwizchz/vince"
+keywords = ["audio", "video", "synth", "dsp"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -17,5 +23,5 @@ serde = "1.0.163"
 typetag = "0.2.8"
 
 [features]
-default = []
+default = ["video_in"]
 video_in = ["dep:screenshots"]

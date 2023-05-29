@@ -1,3 +1,18 @@
+/*!
+The Multiplier module takes 2 inputs and multiplies them together.
+
+## Inputs
+0. First signal
+1. Second signal
+
+## Outputs
+0. The combined signal
+
+## Knobs
+None
+
+*/
+
 use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
@@ -73,8 +88,7 @@ impl Module for Multiplier {
         }
 
         vec![
-            ins.iter()
-                .product()
+            ins[0] * ins[1]
         ]
     }
 }

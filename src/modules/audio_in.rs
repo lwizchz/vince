@@ -1,3 +1,18 @@
+/*!
+The AudioIn module outputs a signal from the primary audio device, after first
+applying a gain to it.
+
+## Inputs
+None
+
+## Outputs
+0. The audio signal from the primary audio device
+
+## Knobs
+0. Gain in the range [0.0, 1.0]
+
+*/
+
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;

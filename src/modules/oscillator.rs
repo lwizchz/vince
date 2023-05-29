@@ -1,3 +1,32 @@
+/*!
+The Oscillator module outputs a generated wave with a given gain.
+
+## Wave Functions
+ * `Sine` - a smooth wave
+ * `Triangle` - a linear sine-like wave
+ * `Square` - a binary wave
+ * `Saw` - a linear ramp-like wave
+
+## Sync Modes
+ * `None` - Do not perform syncing
+ * `Horizontal` - Apply horizontal syncing, i.e. reset the phase every video
+   frame
+ * `Vertical` - Apply vertical syncing, i.e. reset the phase every video line
+
+## Inputs
+None
+
+## Outputs
+0. The wave signal in the range [-K0, K0] where K0 is knob 0
+
+## Knobs
+0. Shift in the range (-inf, inf), affects the signal vertically
+1. Speed in the range (-inf, inf), equivalent to the period
+2. Depth in the range [0.0, inf), equivalent to twice the gain
+3. Phase in the range (-inf, inf), affects the signal horizontally
+
+*/
+
 use std::f32::consts::PI;
 
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};

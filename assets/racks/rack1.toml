@@ -14,8 +14,14 @@
 10 = { name = "Scope 5", type = "Oscilloscope" }
 
 [patches]
-1M0O = ["2M0I", "3M1K"]
-3M0O = ["4M0I", "5M1K"]
+1M0O = [
+    "2M0I",
+    "3M1K",
+]
+3M0O = [
+    "4M0I",
+    "5M1K",
+]
 5M0O = [
     # "0M0I",
     "6M0I",
@@ -26,4 +32,7 @@
     "8M0I",
     "9M1I",
 ]
-9M0O = ["0M0I", "10M0I"]
+9M0O = [
+    "0M0I",
+    "10M0I",
+]

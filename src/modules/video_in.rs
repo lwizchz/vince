@@ -1,3 +1,29 @@
+/*!
+The VideoIn module outputs 3 signals as RGB data from a given video source.
+
+## Video Sources
+ * `Screen` - Output video from a region on the screen (currently hard-coded as
+   {
+       x: 0,
+       y: 0,
+       w: [640](ComponentVideoOut::WIDTH),
+       h: [480](ComponentVideoOut::HEIGHT)
+    }
+ * <strike>`Camera` - Output video from a webcam</strike> Not yet supported
+
+## Inputs
+None
+
+## Outputs
+0. Gamma-corrected red channel in the range [0.0, 1.0]
+1. Gamma-corrected green channel in the range [0.0, 1.0]
+2. Gamma-corrected blue channel in the range [0.0, 1.0]
+
+## Knobs
+None
+
+*/
+
 use std::{sync::{Arc, Mutex}, collections::VecDeque};
 
 use bevy::{prelude::*, ecs::system::EntityCommands};
@@ -23,6 +49,10 @@ enum VideoSource {
         #[serde(skip)]
         Option<ScreenSource>,
     ),
+    // Camera(
+    //     #[serde(skip)]
+    //     Option<CameraSource>,
+    // ),
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -153,16 +183,9 @@ impl Module for VideoIn {
             let eg = g.powf(VideoIn::GAMMA);
             let eb = b.powf(VideoIn::GAMMA);
 
-            // let ey = 0.30 * er + 0.59 * eg + 0.11 * eb;
-            // let ei = -0.27 * (eb - ey) + 0.74 * (er - ey);
-            // let eq = 0.41 * (eb - ey) + 0.48 * (er - ey);
-            // let ec = ei * eq; // FIXME properly modulate chroma
-
-            // vec![ey, ec]
-
             vec![er, eg, eb]
         } else {
-            vec![0.0, 0.0, 0.0]
+            vec![-1.0, -1.0, -1.0]
         }
     }
 }

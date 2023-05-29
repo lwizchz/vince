@@ -1,3 +1,19 @@
+/*!
+The Luma module takes 3 inputs and converts them from RGB data to Luma.
+
+## Inputs
+0. Red channel
+1. Green channel
+2. Blue channel
+
+## Outputs
+0. Luma
+
+## Knobs
+None
+
+*/
+
 use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
@@ -71,6 +87,10 @@ impl Module for Luma {
         let er = ins[0];
         let eg = ins[1];
         let eb = ins[2];
+
+        if er < 0.0 || eg < 0.0 || eb < 0.0 {
+            return vec![-1.0];
+        }
 
         let ey = 0.30 * er + 0.59 * eg + 0.11 * eb;
 

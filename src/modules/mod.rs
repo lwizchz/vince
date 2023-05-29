@@ -1,3 +1,7 @@
+/*!
+All synth modules are defined here.
+*/
+
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use crate::{StepType, MainCameraComponent};
@@ -15,7 +19,7 @@ pub mod oscilloscope;
 pub mod oscillator;
 pub mod noise;
 
-pub mod inverter;
+pub mod scaler;
 pub mod multiplier;
 pub mod mixer;
 

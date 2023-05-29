@@ -1,3 +1,17 @@
+/*!
+The Scaler module takes an input and scales it, optionally inverting it.
+
+## Inputs
+0. The original signal
+
+## Outputs
+1. The scaled signal
+
+## Knobs
+0. Scale
+
+*/
+
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
@@ -5,7 +19,7 @@ use serde::Deserialize;
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Inverter {
+pub struct Scaler {
     #[serde(default)]
     id: Option<usize>,
     #[serde(default)]
@@ -19,7 +33,7 @@ pub struct Inverter {
     knobs: [f32; 1],
 }
 #[typetag::deserialize]
-impl Module for Inverter {
+impl Module for Scaler {
     fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
         self.id = Some(id);
         ec.with_children(|parent| {
@@ -37,7 +51,7 @@ impl Module for Inverter {
             component.with_children(|parent| {
                 let name = match &self.name {
                     Some(name) => format!("{name}\n"),
-                    None => format!("M{id} Inverter\n"),
+                    None => format!("M{id} Scaler\n"),
                 };
                 self.children.push(
                     parent.spawn((
