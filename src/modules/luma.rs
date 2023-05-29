@@ -25,14 +25,14 @@ use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent}};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Luma {
-    #[serde(default)]
+    #[serde(skip)]
     id: Option<usize>,
     #[serde(default)]
     name: Option<String>,
 
-    #[serde(default)]
+    #[serde(skip)]
     component: Option<Entity>,
-    #[serde(default)]
+    #[serde(skip)]
     children: Vec<Entity>,
 }
 #[typetag::deserialize]

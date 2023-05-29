@@ -112,6 +112,7 @@ fn main() {
         })).add_plugin(TomlAssetPlugin::<Rack>::new(&["toml"]))
         .add_plugin(bevy_framepace::FramepacePlugin)
         .add_state::<AppState>()
+        .insert_resource(FixedTime::new_from_secs(1.0 / f32::from(FRAME_RATE)))
         .add_startup_system(load_rack)
         .add_system(setup.run_if(in_state(AppState::Loading)))
         .add_system(setup_patches.run_if(in_state(AppState::Loaded)))
@@ -119,7 +120,6 @@ fn main() {
         .add_system(rack_stepper.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(rack_render.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(bevy::window::close_on_esc)
-        .insert_resource(FixedTime::new_from_secs(1.0 / f32::from(FRAME_RATE)))
         .run();
 }
 

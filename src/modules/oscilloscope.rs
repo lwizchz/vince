@@ -23,24 +23,26 @@ use crate::{StepType, CameraComponent, modules::{Module, ModuleComponent, Module
 
 #[derive(Default, Deserialize, Debug, Clone)]
 pub struct Oscilloscope {
-    #[serde(default)]
+    #[serde(skip)]
     id: Option<usize>,
     #[serde(default)]
     name: Option<String>,
 
-    #[serde(default)]
+    #[serde(skip)]
     component: Option<Entity>,
-    #[serde(default)]
+    #[serde(skip)]
     mesh: Option<Entity>,
-    #[serde(default)]
+    #[serde(skip)]
     children: Vec<Entity>,
 
-    #[serde(default)]
+    #[serde(skip)]
     max_t: f32,
-    #[serde(default)]
+    #[serde(skip)]
     max_val: f32,
-    #[serde(default)]
+    #[serde(skip)]
     vals: VecDeque<(f32, f32)>,
+    #[serde(skip)]
+    cycles: usize,
 }
 impl Oscilloscope {
     const WIDTH: f32 = 150.0;
@@ -52,8 +54,8 @@ impl Oscilloscope {
             Some((t0, _)) => {
                 let (mut max_t, mut max_val) = self.vals.iter()
                     .fold((0.0f32, 0.0f32), |mut a, (t, v)| {
-                        if *t - t0 > a.0 {
-                            a.0 = *t - t0;
+                        if *t > a.0 {
+                            a.0 = *t;
                         }
                         if v.abs() > a.1 {
                             a.1 = v.abs();
@@ -70,7 +72,7 @@ impl Oscilloscope {
                 self.max_val = max_val;
                 self.vals.iter()
                     .map(|(t, v)| Vec3 {
-                        x: (t - t0) * Self::WIDTH / max_t,
+                        x: (t - t0) * Self::WIDTH / (max_t - t0),
                         y: v * Self::HEIGHT / max_val,
                         z: 0.0,
                     }).collect::<Vec<Vec3>>()
@@ -215,21 +217,16 @@ impl Module for Oscilloscope {
 
         let val = ins[0];
 
-        let zs = self.vals.iter()
-            .fold((0usize, None::<&(f32, f32)>), |a, v1| {
-                match a.1 {
-                    Some(v0) => {
-                        if v0.1.signum() == v1.1.signum() {
-                            (a.0, Some(v1))
-                        } else {
-                            (a.0+1, Some(v1))
-                        }
-                    },
-                    None => (0, Some(v1)),
-                }
-            }).0;
-        if zs >= 14 || self.vals.len() > Self::MAX_LEN {
-            self.vals.remove(0);
+        if !self.vals.is_empty() {
+            if val.signum() != self.vals.iter().last().unwrap().1.signum() {
+                self.cycles += 1;
+            }
+        }
+        if self.cycles >= 14 {
+            self.vals.pop_front();
+            self.cycles -= 1;
+        } else if self.vals.len() > Self::MAX_LEN {
+            self.vals.pop_front();
         }
         self.vals.push_back((time, val));
 

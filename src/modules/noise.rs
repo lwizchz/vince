@@ -39,14 +39,14 @@ enum NoiseFunc {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Noise {
-    #[serde(default)]
+    #[serde(skip)]
     id: Option<usize>,
     #[serde(default)]
     name: Option<String>,
 
-    #[serde(default)]
+    #[serde(skip)]
     component: Option<Entity>,
-    #[serde(default)]
+    #[serde(skip)]
     children: Vec<Entity>,
 
     #[serde(default)]

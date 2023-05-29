@@ -3,9 +3,9 @@
 1 = { type = "CompositeVideoOut" }
 
 2 = { name = "Screen Record", type = "VideoIn", source = "Screen" }
-# 3 = { name = "Red", type = "Oscilloscope" }
-# 4 = { name = "Green", type = "Oscilloscope" }
-# 5 = { name = "Blue", type = "Oscilloscope" }
+3 = { name = "Red", type = "Oscilloscope" }
+4 = { name = "Green", type = "Oscilloscope" }
+5 = { name = "Blue", type = "Oscilloscope" }
 
 6 = { type = "Luma" }
 7 = { name = "Luma", type = "Oscilloscope" }

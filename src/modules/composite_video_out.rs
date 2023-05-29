@@ -24,21 +24,21 @@ use crate::{StepType, MainCameraComponent, modules::{Module, ModuleComponent, Mo
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct CompositeVideoOut {
-    #[serde(default)]
+    #[serde(skip)]
     id: Option<usize>,
     #[serde(default)]
     name: Option<String>,
 
-    #[serde(default)]
+    #[serde(skip)]
     component: Option<Entity>,
-    #[serde(default)]
+    #[serde(skip)]
     children: Vec<Entity>,
 
-    #[serde(default)]
+    #[serde(skip)]
     scan: usize,
-    #[serde(default)]
+    #[serde(skip)]
     luma: VecDeque<(f32, f32)>,
-    #[serde(default)]
+    #[serde(skip)]
     chroma: VecDeque<(f32, f32)>,
 }
 impl CompositeVideoOut {
@@ -159,7 +159,7 @@ impl Module for CompositeVideoOut {
         let y = ins[0];
         let c = ins[1];
 
-        if y < 0.0 || c < 0.0 {
+        if y < 0.0 {
             return vec![];
         }
 

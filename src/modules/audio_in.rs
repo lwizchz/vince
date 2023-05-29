@@ -21,17 +21,17 @@ use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, Mo
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AudioIn {
-    #[serde(default)]
+    #[serde(skip)]
     id: Option<usize>,
     #[serde(default)]
     name: Option<String>,
 
-    #[serde(default)]
+    #[serde(skip)]
     component: Option<Entity>,
-    #[serde(default)]
+    #[serde(skip)]
     children: Vec<Entity>,
 
-    #[serde(default)]
+    #[serde(skip)]
     audio_buffer: Vec<f32>,
 
     knobs: [f32; 1],

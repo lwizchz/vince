@@ -56,21 +56,21 @@ enum OscillatorSync {
 }
 #[derive(Default, Deserialize, Debug, Clone)]
 pub struct Oscillator {
-    #[serde(default)]
+    #[serde(skip)]
     id: Option<usize>,
     #[serde(default)]
     name: Option<String>,
 
-    #[serde(default)]
+    #[serde(skip)]
     component: Option<Entity>,
-    #[serde(default)]
+    #[serde(skip)]
     children: Vec<Entity>,
 
     #[serde(default)]
     sync: OscillatorSync,
-    #[serde(default)]
+    #[serde(skip)]
     sync_phase: f32,
-    #[serde(default)]
+    #[serde(skip)]
     sync_count: usize,
 
     func: OscillatorFunc,

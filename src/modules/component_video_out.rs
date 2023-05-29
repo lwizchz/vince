@@ -25,19 +25,19 @@ use crate::{StepType, MainCameraComponent, modules::{Module, ModuleComponent, Mo
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ComponentVideoOut {
-    #[serde(default)]
+    #[serde(skip)]
     id: Option<usize>,
     #[serde(default)]
     name: Option<String>,
 
-    #[serde(default)]
+    #[serde(skip)]
     component: Option<Entity>,
-    #[serde(default)]
+    #[serde(skip)]
     children: Vec<Entity>,
 
-    #[serde(default)]
+    #[serde(skip)]
     scan: usize,
-    #[serde(default)]
+    #[serde(skip)]
     rgb: VecDeque<(f32, [f32; 3])>,
 }
 impl ComponentVideoOut {
