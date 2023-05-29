@@ -2,7 +2,7 @@ use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
 
-use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent};
+use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent}};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AudioIn {
@@ -84,7 +84,11 @@ impl Module for AudioIn {
         self.audio_buffer.extend(ai);
     }
 
-    fn step(&mut self, _time: f32, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, _time: f32, ft: StepType, _ins: &[f32]) -> Vec<f32> {
+        if ft == StepType::Video {
+            return vec![0.0];
+        }
+
         if !self.audio_buffer.is_empty() {
             vec![self.audio_buffer.remove(0) * self.knobs[0]]
         } else {

@@ -156,6 +156,7 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
             "racks/rack0.toml".to_string()
         };
         error!("Invalid file path: {}", rack_path);
+        error!("Check whether you need to enable a feature");
         exit.send(AppExit);
     }
 }
@@ -242,14 +243,28 @@ fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Ra
         }
     }
 }
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum StepType {
+    Key,
+    Audio,
+    Video,
+}
 fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut<RackHandle>) {
     if let Some(rack) = racks.get_mut(&h_rack.0) {
         if let Some(audio_context) = &rack.audio_context {
             let t = time.elapsed_seconds_wrapped();
-            let steps = u64::from(audio_context.output.config.sample_rate.0) / u64::from(FRAME_RATE) / DOWNSAMPLE;
-            let d = Duration::from_micros(1000 * 1000 / steps / u64::from(FRAME_RATE)).as_secs_f32();
-            for i in 0..steps {
-                rack.step(t + i as f32 * d);
+            let audio_steps = u64::from(audio_context.output.config.sample_rate.0) / u64::from(FRAME_RATE) / DOWNSAMPLE;
+            let ad = Duration::from_micros(1000 * 1000 / audio_steps / u64::from(FRAME_RATE)).as_secs_f32();
+
+            let video_steps = 209;
+            let _vd = Duration::from_nanos(1000 * 1000 * 1000 / audio_steps / video_steps / u64::from(FRAME_RATE)).as_secs_f32();
+
+            rack.step(t, StepType::Key);
+            for i in 1..audio_steps {
+                rack.step(t + i as f32 * ad, StepType::Audio);
+                // for j in 1..video_steps {
+                //     rack.step(t + i as f32 * ad + j as f32 * vd, StepType::Video);
+                // }
             }
         } else {
             rack.init_audio();

@@ -4,7 +4,7 @@ use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
 
-use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent, video_out::VideoOut};
+use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent, component_video_out::ComponentVideoOut}};
 
 const fn _default_true() -> bool {
     true
@@ -111,7 +111,7 @@ impl Module for Oscillator {
         self.knobs[i] = val;
     }
 
-    fn step(&mut self, time: f32, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f32, _ft: StepType, _ins: &[f32]) -> Vec<f32> {
         let t = time;
         let shift = self.knobs[0];
         let speed = self.knobs[1];
@@ -121,7 +121,7 @@ impl Module for Oscillator {
         match self.sync {
             OscillatorSync::None => self.sync_phase = 0.0,
             OscillatorSync::Horizontal => { // Reset every frame
-                if self.sync_count % (VideoOut::WIDTH as usize * VideoOut::HEIGHT as usize) == 0 {
+                if self.sync_count % (ComponentVideoOut::WIDTH as usize * ComponentVideoOut::HEIGHT as usize) == 0 {
                     self.sync_phase = match self.func {
                         OscillatorFunc::Saw => t,
                         _ => speed * t,
@@ -130,7 +130,7 @@ impl Module for Oscillator {
                 }
             },
             OscillatorSync::Vertical => { // Reset every line
-                if self.sync_count % (VideoOut::WIDTH as usize) == 0 {
+                if self.sync_count % (ComponentVideoOut::WIDTH as usize) == 0 {
                     self.sync_phase = match self.func {
                         OscillatorFunc::Saw => t,
                         _ => speed * t,

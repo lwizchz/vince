@@ -7,8 +7,7 @@ use bevy::reflect::TypeUuid;
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use serde::Deserialize;
 
-use crate::DOWNSAMPLE;
-use crate::{patch::Patches, modules::{Module, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
+use crate::{DOWNSAMPLE, StepType, patch::Patches, modules::{Module, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 pub struct AudioContextOutput {
     _device: cpal::Device,
@@ -30,7 +29,7 @@ pub(crate) struct AudioContext {
 }
 impl std::fmt::Debug for AudioContext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("AudioContext")
+        write!(f, "AudioContext")
     }
 }
 
@@ -39,6 +38,7 @@ impl std::fmt::Debug for AudioContext {
 pub struct Rack {
     #[serde(skip)]
     pub(crate) audio_context: Option<AudioContext>,
+
     pub modules: HashMap<String, Box<dyn Module>>,
     pub patches: Patches,
 }
@@ -123,7 +123,7 @@ impl Rack {
         });
     }
 
-    pub fn step(&mut self, time: f32) {
+    pub fn step(&mut self, time: f32, ft: StepType) {
         if self.audio_context.is_none() {
             self.init_audio();
         }
@@ -139,7 +139,7 @@ impl Rack {
                     .any(|p| p.1.starts_with(&format!("{idx}M")))
             )
         {
-            let mouts = m.step(time, &vec![0.0; m.inputs()]);
+            let mouts = m.step(time, ft, &vec![0.0; m.inputs()]);
             stepped.push(idx.clone());
             for (i, mo) in mouts.iter().enumerate() {
                 outs.insert(format!("{idx}M{i}O"), *mo);
@@ -180,7 +180,7 @@ impl Rack {
                             }
                         }
 
-                        let mouts = m.step(time, &mins);
+                        let mouts = m.step(time, ft, &mins);
                         stepped.push(idx.clone());
                         for (i, mo) in mouts.iter().enumerate() {
                             outs.insert(format!("{idx}M{i}O"), *mo);
@@ -235,7 +235,6 @@ impl Rack {
                 }
             }
         }
-
 
         // Apply feedback patches to knobs
         for (idx, m) in self.modules.iter_mut()

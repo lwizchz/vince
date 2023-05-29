@@ -4,7 +4,7 @@ use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::{Mesh2dHandle, Mat
 
 use serde::Deserialize;
 
-use crate::{CameraComponent, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
+use crate::{StepType, CameraComponent, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 #[derive(Default, Deserialize, Debug, Clone)]
 pub struct Oscilloscope {
@@ -197,7 +197,11 @@ impl Module for Oscilloscope {
         0
     }
 
-    fn step(&mut self, time: f32, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f32, ft: StepType, ins: &[f32]) -> Vec<f32> {
+        if ft == StepType::Video {
+            return vec![];
+        }
+
         let val = ins[0];
 
         let zs = self.vals.iter()

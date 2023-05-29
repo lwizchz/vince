@@ -2,7 +2,7 @@ use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
 
-use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent};
+use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent}};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Mixer {
@@ -78,7 +78,11 @@ impl Module for Mixer {
         self.knobs[i] = val;
     }
 
-    fn step(&mut self, _time: f32, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, _time: f32, ft: StepType, ins: &[f32]) -> Vec<f32> {
+        if ft == StepType::Video {
+            return vec![0.0];
+        }
+
         vec![
             ins.iter()
                 .zip(self.knobs.iter())

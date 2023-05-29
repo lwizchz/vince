@@ -1,0 +1,32 @@
+[modules]
+0 = { type = "ComponentVideoOut" }
+1 = { type = "CompositeVideoOut" }
+
+2 = { name = "Screen Record", type = "VideoIn", source = "Screen" }
+# 3 = { name = "Red", type = "Oscilloscope" }
+# 4 = { name = "Green", type = "Oscilloscope" }
+# 5 = { name = "Blue", type = "Oscilloscope" }
+
+6 = { type = "Luma" }
+7 = { name = "Luma", type = "Oscilloscope" }
+
+[patches]
+2M0O = [
+    "0M0I",
+    "3M0I",
+    "6M0I",
+]
+2M1O = [
+    "0M1I",
+    "4M0I",
+    "6M1I",
+]
+2M2O = [
+    "0M2I",
+    "5M0I",
+    "6M2I",
+]
+6M0O = [
+    "1M0I",
+    "7M0I",
+]

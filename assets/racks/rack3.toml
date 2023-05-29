@@ -1,5 +1,5 @@
 [modules]
-0 = { type = "VideoOut" }
+0 = { type = "CompositeVideoOut" }
 
 1 = { name = "Luma", type = "Oscillator", func = "Square", sync = "Horizontal", knobs = [0.5, 7.5, 1.0, 0.0] }
 2 = { type = "Oscilloscope" }

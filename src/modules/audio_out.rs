@@ -2,7 +2,7 @@ use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
 
-use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent};
+use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent}};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct AudioOut {
@@ -84,7 +84,11 @@ impl Module for AudioOut {
         self.audio_buffer.drain(0..).collect()
     }
 
-    fn step(&mut self, _time: f32, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, _time: f32, ft: StepType, ins: &[f32]) -> Vec<f32> {
+        if ft == StepType::Video {
+            return vec![];
+        }
+
         self.audio_buffer.extend(
             ins.iter()
                 .map(|inp| inp * self.knobs[0])

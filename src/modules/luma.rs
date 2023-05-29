@@ -5,7 +5,7 @@ use serde::Deserialize;
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent}};
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Multiplier {
+pub struct Luma {
     #[serde(default)]
     id: Option<usize>,
     #[serde(default)]
@@ -17,7 +17,7 @@ pub struct Multiplier {
     children: Vec<Entity>,
 }
 #[typetag::deserialize]
-impl Module for Multiplier {
+impl Module for Luma {
     fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
         self.id = Some(id);
         ec.with_children(|parent| {
@@ -35,7 +35,7 @@ impl Module for Multiplier {
             component.with_children(|parent| {
                 let name = match &self.name {
                     Some(name) => format!("{name}\n"),
-                    None => format!("M{id} Multiplier\n"),
+                    None => format!("M{id} Luma\n"),
                 };
                 self.children.push(
                     parent.spawn((
@@ -58,7 +58,7 @@ impl Module for Multiplier {
     }
 
     fn inputs(&self) -> usize {
-        2
+        3
     }
     fn outputs(&self) -> usize {
         1
@@ -67,14 +67,13 @@ impl Module for Multiplier {
         0
     }
 
-    fn step(&mut self, _time: f32, ft: StepType, ins: &[f32]) -> Vec<f32> {
-        if ft == StepType::Video {
-            return vec![0.0];
-        }
+    fn step(&mut self, _time: f32, _ft: StepType, ins: &[f32]) -> Vec<f32> {
+        let er = ins[0];
+        let eg = ins[1];
+        let eb = ins[2];
 
-        vec![
-            ins.iter()
-                .product()
-        ]
+        let ey = 0.30 * er + 0.59 * eg + 0.11 * eb;
+
+        vec![ey]
     }
 }

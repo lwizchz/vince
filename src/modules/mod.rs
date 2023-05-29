@@ -1,17 +1,23 @@
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
-use crate::MainCameraComponent;
+use crate::{StepType, MainCameraComponent};
 
 pub mod audio_out;
 pub mod audio_in;
 
-pub mod video_out;
+pub mod composite_video_out;
+pub mod component_video_out;
+#[cfg(feature = "video_in")]
+pub mod video_in;
+pub mod luma;
 
-pub mod mixer;
-pub mod multiplier;
+pub mod oscilloscope;
 pub mod oscillator;
 pub mod noise;
-pub mod oscilloscope;
+
+pub mod inverter;
+pub mod multiplier;
+pub mod mixer;
 
 #[typetag::deserialize(tag = "type")]
 pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
@@ -56,7 +62,7 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     }
     fn extend_audio_buffer(&mut self, _ai: &[f32]) {}
 
-    fn step(&mut self, time: f32, ins: &[f32]) -> Vec<f32>;
+    fn step(&mut self, time: f32, ft: StepType, ins: &[f32]) -> Vec<f32>;
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {}
 }
 pub trait ModuleClone {

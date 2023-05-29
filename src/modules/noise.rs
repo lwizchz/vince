@@ -4,7 +4,7 @@ use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
 
-use crate::modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent};
+use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 #[derive(Default, Deserialize, Debug, Clone)]
 enum NoiseFunc {
@@ -86,7 +86,11 @@ impl Module for Noise {
         1
     }
 
-    fn step(&mut self, time: f32, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f32, ft: StepType, _ins: &[f32]) -> Vec<f32> {
+        if ft == StepType::Video {
+            return vec![0.0];
+        }
+
         match self.func {
             NoiseFunc::White => vec![thread_rng().gen_range(-1.0..=1.0) * self.knobs[0]],
             // NoiseFunc::Fractional(_p) => {

@@ -4,10 +4,10 @@ use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::Mesh2dHandle, rend
 
 use serde::Deserialize;
 
-use crate::{MainCameraComponent, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
+use crate::{StepType, MainCameraComponent, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct VideoOut {
+pub struct CompositeVideoOut {
     #[serde(default)]
     id: Option<usize>,
     #[serde(default)]
@@ -25,13 +25,13 @@ pub struct VideoOut {
     #[serde(default)]
     chroma: VecDeque<(f32, f32)>,
 }
-impl VideoOut {
+impl CompositeVideoOut {
     pub const WIDTH: f32 = 640.0;
     pub const HEIGHT: f32 = 480.0;
     const MAX_LEN: usize = 2048;
 }
 #[typetag::deserialize]
-impl Module for VideoOut {
+impl Module for CompositeVideoOut {
     fn init(&mut self, id: usize, mut ec: EntityCommands, images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
         self.id = Some(id);
 
@@ -139,7 +139,7 @@ impl Module for VideoOut {
         0
     }
 
-    fn step(&mut self, time: f32, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f32, _ft: StepType, ins: &[f32]) -> Vec<f32> {
         let y = ins[0];
         if self.luma.len() > Self::MAX_LEN {
             self.luma.remove(0);
@@ -161,13 +161,18 @@ impl Module for VideoOut {
                     for (luma, chroma) in self.luma.drain(0..).zip(self.chroma.drain(0..)) {
                         let y = luma.1;
                         let c = chroma.1;
+
+                        // FIXME demodulate chroma
                         let i = c;
                         let q = c;
 
-                        // FIXME gamma correction
-                        image.data[self.scan] = ((y + 0.9469*i + 0.6236*q)*255.0) as u8;
-                        image.data[self.scan+1] = ((y - 0.2748*i - 0.6357*q)*255.0) as u8;
-                        image.data[self.scan+2] = ((y - 1.1*i + 1.7*q)*255.0) as u8;
+                        let r = ((y + 0.9469*i + 0.6236*q)*255.0) as u8;
+                        let g = ((y - 0.2748*i - 0.6357*q)*255.0) as u8;
+                        let b = ((y - 1.1*i + 1.7*q)*255.0) as u8;
+
+                        image.data[self.scan] = r;
+                        image.data[self.scan+1] = g;
+                        image.data[self.scan+2] = b;
                         image.data[self.scan+3] = 255;
 
                         self.scan = (self.scan+4) % image.data.len();
