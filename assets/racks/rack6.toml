@@ -1,0 +1,13 @@
+[modules]
+0M = { name = "Audio Out", type = "AudioOut", knobs = [1.0] }
+1M = { type = "FileEncoder", filename = "target/a440.wav" }
+
+2M = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
+3M = { type = "Oscilloscope" }
+
+[patches]
+2M0O = [
+    "0M0I",
+    "1M0I",
+    "3M0I",
+]

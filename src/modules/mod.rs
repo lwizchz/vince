@@ -17,6 +17,9 @@ pub mod component_video_out;
 pub mod video_in;
 pub mod luma;
 
+#[cfg(feature = "files")]
+pub mod file_encoder;
+
 pub mod oscilloscope;
 pub mod oscillator;
 pub mod noise;
@@ -28,6 +31,7 @@ pub mod mixer;
 #[typetag::deserialize(tag = "type")]
 pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     fn init(&mut self, id: usize, ec: EntityCommands, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle);
+    fn exit(&mut self) {}
     fn is_init(&self) -> bool {
         self.id().is_some()
     }

@@ -97,7 +97,7 @@ impl Rack {
                         if let Ok(mut buf) = inbuf.lock() {
                             buf.extend(data);
                         } else {
-                            error!("dropped audio input");
+                            error!("Rack dropped audio input");
                         }
                     },
                     |err| {
@@ -270,6 +270,11 @@ impl Rack {
     pub fn render(&mut self, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         for m in self.modules.values_mut() {
             m.render(images, meshes, q_text, q_image, q_mesh);
+        }
+    }
+    pub fn exit(&mut self) {
+        for m in self.modules.values_mut() {
+            m.exit();
         }
     }
 }

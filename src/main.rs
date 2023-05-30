@@ -87,6 +87,8 @@ use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, 
 
 const FRAME_RATE: u16 = 60;
 
+static mut CONTINUOUS_TIME: Option<f64> = None;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(AssetPlugin {
@@ -110,8 +112,8 @@ fn main() {
         .add_system(setup_patches.run_if(in_state(AppState::Loaded)))
         .add_system(rack_reloader.run_if(in_state(AppState::Ready)))
         .add_system(rack_stepper.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
-        .add_system(rack_render.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
-        .add_system(bevy::window::close_on_esc)
+        .add_system(rack_render.run_if(in_state(AppState::Ready)))
+        .add_system(rack_keyboard_input.run_if(in_state(AppState::Ready)))
         .run();
 }
 
@@ -316,22 +318,32 @@ pub enum StepType {
     Audio,
     Video,
 }
+fn continuous_step(time: &Res<Time>, dt: f64, rack: &mut Rack, st: StepType) {
+    let t = unsafe {
+        match &mut CONTINUOUS_TIME {
+            Some(t) => {
+                *t += dt;
+                *t
+            },
+            None => {
+                CONTINUOUS_TIME = Some(time.elapsed_seconds_wrapped_f64());
+                CONTINUOUS_TIME.unwrap()
+            },
+        }
+    };
+
+    rack.step(t, st);
+}
 fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut<RackHandle>) {
     if let Some(rack) = racks.get_mut(&h_rack.0) {
         if let Some(audio_context) = &rack.audio_context {
-            let t = time.elapsed_seconds_wrapped_f64();
-            let audio_steps = audio_context.output.config.sample_rate.0 / u32::from(FRAME_RATE);
-            let ad = Duration::from_micros(1000 * 1000 / u64::from(audio_steps) / u64::from(FRAME_RATE)).as_secs_f64();
+            let sr = audio_context.output.config.sample_rate.0 as u64;
+            let audio_steps = sr / u64::from(FRAME_RATE);
+            let adt = Duration::from_micros(1000 * 1000 / sr).as_secs_f64();
 
-            // let video_steps: u32 = 209;
-            // let vd = Duration::from_nanos(1000 * 1000 * 1000 / u64::from(audio_steps) / u64::from(video_steps) / u64::from(FRAME_RATE)).as_secs_f64();
-
-            rack.step(t, StepType::Key);
-            for i in 1..audio_steps {
-                rack.step(t + f64::from(i) * ad, StepType::Audio);
-                // for j in 1..video_steps {
-                //     rack.step(t + i * ad + j * vd, StepType::Video);
-                // }
+            continuous_step(&time, adt, rack, StepType::Key);
+            for _ in 1..audio_steps {
+                continuous_step(&time, adt, rack, StepType::Audio);
             }
         } else {
             rack.init_audio();
@@ -341,5 +353,13 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut
 fn rack_render(mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, h_rack: ResMut<RackHandle>, mut q_text: Query<&mut Text, With<ModuleTextComponent>>, mut q_image: Query<&mut UiImage, With<ModuleImageComponent>>, mut q_mesh: Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
     if let Some(rack) = racks.get_mut(&h_rack.0) {
         rack.render(&mut images, &mut meshes, &mut q_text, &mut q_image, &mut q_mesh);
+    }
+}
+fn rack_keyboard_input(keys: Res<Input<KeyCode>>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut<RackHandle>, mut exit: EventWriter<AppExit>) {
+    if let Some(rack) = racks.get_mut(&h_rack.0) {
+        if keys.just_released(KeyCode::Escape) {
+            rack.exit();
+            exit.send(AppExit);
+        }
     }
 }
