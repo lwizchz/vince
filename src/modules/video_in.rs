@@ -157,7 +157,7 @@ impl Module for VideoIn {
         0
     }
 
-    fn step(&mut self, _time: f32, st: StepType, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, _time: f64, st: StepType, _ins: &[f32]) -> Vec<f32> {
         // Fetch video input
         if st == StepType::Key {
             self.queue_video_in();

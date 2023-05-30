@@ -99,7 +99,7 @@ impl Module for AudioOut {
         self.audio_buffer.drain(..).collect()
     }
 
-    fn step(&mut self, _time: f32, st: StepType, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, _time: f64, st: StepType, ins: &[f32]) -> Vec<f32> {
         if st == StepType::Video {
             return vec![];
         }

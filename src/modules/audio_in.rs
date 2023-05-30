@@ -99,7 +99,7 @@ impl Module for AudioIn {
         self.audio_buffer.extend(ai);
     }
 
-    fn step(&mut self, _time: f32, st: StepType, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, _time: f64, st: StepType, _ins: &[f32]) -> Vec<f32> {
         if st == StepType::Video {
             return vec![0.0];
         }

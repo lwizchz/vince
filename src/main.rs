@@ -86,8 +86,6 @@ pub mod modules;
 use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent, ModuleKey, ModuleIOK};
 
 const FRAME_RATE: u16 = 60;
-static mut AUDIO_OUTPUT_STREAM: Option<cpal::Stream> = None;
-static mut AUDIO_INPUT_STREAM: Option<cpal::Stream> = None;
 
 fn main() {
     App::new()
@@ -321,7 +319,7 @@ pub enum StepType {
 fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut<RackHandle>) {
     if let Some(rack) = racks.get_mut(&h_rack.0) {
         if let Some(audio_context) = &rack.audio_context {
-            let t = time.elapsed_seconds_wrapped();
+            let t = time.elapsed_seconds_wrapped_f64();
             let audio_steps = audio_context.output.config.sample_rate.0 / u32::from(FRAME_RATE);
             let ad = Duration::from_micros(1000 * 1000 / u64::from(audio_steps) / u64::from(FRAME_RATE)).as_secs_f64();
 
@@ -329,10 +327,10 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut
             // let vd = Duration::from_nanos(1000 * 1000 * 1000 / u64::from(audio_steps) / u64::from(video_steps) / u64::from(FRAME_RATE)).as_secs_f64();
 
             rack.step(t, StepType::Key);
-            for i in 1..=audio_steps {
-                rack.step(t + (f64::from(i) * ad) as f32, StepType::Audio);
-                // for j in 1..=video_steps {
-                //     rack.step(t + (f64::from(i) * ad + f64::from(j) * vd) as f32, StepType::Video);
+            for i in 1..audio_steps {
+                rack.step(t + f64::from(i) * ad, StepType::Audio);
+                // for j in 1..video_steps {
+                //     rack.step(t + i * ad + j * vd, StepType::Video);
                 // }
             }
         } else {

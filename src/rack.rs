@@ -5,16 +5,23 @@ use bevy::{prelude::*, sprite::Mesh2dHandle};
 use bevy::reflect::TypeUuid;
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
+use oddio::Signal;
 use serde::Deserialize;
 
 use crate::modules::ModuleIOK;
 use crate::{StepType, patch::Patches, modules::{ModuleKey, Module, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
+const AUDIO_BUFFER_SIZE: usize = 512;
+const AUDIO_STREAM_SIZE: usize = 16384;
+
+static mut AUDIO_OUTPUT_STREAM: Option<cpal::Stream> = None;
+static mut AUDIO_INPUT_STREAM: Option<cpal::Stream> = None;
+
 pub struct AudioContextOutput {
     _device: cpal::Device,
     pub(crate) config: cpal::StreamConfig,
 
-    mixer_handle: oddio::Handle<oddio::Mixer<[f32; 2]>>,
+    buf_stream_handle: oddio::Handle<oddio::Stream<[f32; 2]>>,
     buffer: Vec<f32>,
 }
 pub struct AudioContextInput {
@@ -55,13 +62,13 @@ impl Rack {
             buffer_size: cpal::BufferSize::Default,
         };
 
-        let (out_mixer_handle, out_mixer) = oddio::split(oddio::Mixer::new());
+        let (out_buf_stream_handle, out_buf_stream) = oddio::split(oddio::Stream::<[f32; 2]>::new(sample_rate.0, AUDIO_STREAM_SIZE));
 
         let out_stream = out_device.build_output_stream(
             &out_config,
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                 let frames = oddio::frame_stereo(data);
-                oddio::run(&out_mixer, sample_rate.0, frames);
+                oddio::run(&out_buf_stream, sample_rate.0, frames);
             },
             |err| {
                 error!("{err}");
@@ -70,7 +77,7 @@ impl Rack {
         ).unwrap();
         out_stream.play().unwrap();
         unsafe {
-            crate::AUDIO_OUTPUT_STREAM = Some(out_stream);
+            AUDIO_OUTPUT_STREAM = Some(out_stream);
         }
 
         let input = match host.default_input_device() {
@@ -100,7 +107,7 @@ impl Rack {
                 ).unwrap();
                 in_stream.play().unwrap();
                 unsafe {
-                    crate::AUDIO_INPUT_STREAM = Some(in_stream);
+                    AUDIO_INPUT_STREAM = Some(in_stream);
                 }
 
                 Some(AudioContextInput {
@@ -117,14 +124,15 @@ impl Rack {
             output: AudioContextOutput {
                 _device: out_device,
                 config: out_config,
-                mixer_handle: out_mixer_handle,
+                // mixer_handle: out_mixer_handle,
+                buf_stream_handle: out_buf_stream_handle,
                 buffer: vec![],
             },
             input,
         });
     }
 
-    pub fn step(&mut self, time: f32, ft: StepType) {
+    pub fn step(&mut self, time: f64, st: StepType) {
         if self.audio_context.is_none() {
             self.init_audio();
         }
@@ -140,7 +148,7 @@ impl Rack {
                     .any(|p| p.1.id == k.id)
             )
         {
-            let mouts = m.step(time, ft, &vec![0.0; m.inputs()]);
+            let mouts = m.step(time, st, &vec![0.0; m.inputs()]);
             stepped.push(k.id);
             for (i, mo) in mouts.iter().enumerate() {
                 outs.insert(ModuleKey {
@@ -180,7 +188,7 @@ impl Rack {
                             }
                         }
 
-                        let mouts = m.step(time, ft, &mins);
+                        let mouts = m.step(time, st, &mins);
                         stepped.push(k.id);
                         for (i, mo) in mouts.iter().enumerate() {
                             outs.insert(ModuleKey {
@@ -208,22 +216,24 @@ impl Rack {
                     ao
                 });
 
-            const BUFSIZE: usize = 4096;
-            if audio_context.output.buffer.len() == BUFSIZE {
+            audio_context.output.buffer.extend(ao);
+            if audio_context.output.buffer.len() == AUDIO_BUFFER_SIZE {
                 let sr = audio_context.output.config.sample_rate.0;
                 let frames = oddio::Frames::from_slice(sr, &audio_context.output.buffer);
-                let signal: oddio::FramesSignal<f32> = oddio::FramesSignal::from(frames);
+                let signal = oddio::FramesSignal::from(frames);
+
                 let reinhard = oddio::Reinhard::new(signal);
                 let fgain = oddio::FixedGain::new(reinhard, -20.0);
+                let stereo = oddio::MonoToStereo::new(fgain);
 
-                audio_context.output.mixer_handle
-                    .control::<oddio::Mixer<_>, _>()
-                    .play(oddio::MonoToStereo::new(fgain));
+                let mut samples = [[0.0; 2]; AUDIO_BUFFER_SIZE];
+                stereo.sample(1.0 / sr as f32, &mut samples);
+                audio_context.output.buf_stream_handle
+                    .control::<oddio::Stream<_>, _>()
+                    .write(&samples);
 
-                audio_context.output.buffer = Vec::with_capacity(BUFSIZE);
+                audio_context.output.buffer = Vec::with_capacity(AUDIO_BUFFER_SIZE);
             }
-
-            audio_context.output.buffer.extend(ao);
 
             // Consume captured audio
             if let Some(input) = &mut audio_context.input {

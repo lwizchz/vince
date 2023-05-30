@@ -37,13 +37,13 @@ pub struct CompositeVideoOut {
     #[serde(skip)]
     scan: usize,
     #[serde(skip)]
-    luma: VecDeque<(f32, f32)>,
+    luma: VecDeque<(f64, f32)>,
     #[serde(skip)]
-    chroma: VecDeque<(f32, f32)>,
+    chroma: VecDeque<(f64, f32)>,
 }
 impl CompositeVideoOut {
-    pub const WIDTH: f32 = 640.0;
-    pub const HEIGHT: f32 = 480.0;
+    pub const WIDTH: usize = 640;
+    pub const HEIGHT: usize = 480;
     const MAX_LEN: usize = 2048;
 }
 #[typetag::deserialize]
@@ -105,7 +105,10 @@ impl Module for CompositeVideoOut {
                             style: Style {
                                 position_type: PositionType::Relative,
                                 position: UiRect::top(Val::Px(10.0)),
-                                size: Size::new(Val::Px(Self::WIDTH), Val::Px(Self::HEIGHT)),
+                                size: Size::new(
+                                    Val::Px(f32::from(Self::WIDTH as u16)),
+                                    Val::Px(f32::from(Self::HEIGHT as u16)),
+                                ),
                                 ..default()
                             },
                             image: UiImage::new(image_handle),
@@ -155,7 +158,7 @@ impl Module for CompositeVideoOut {
         0
     }
 
-    fn step(&mut self, time: f32, _st: StepType, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
         let y = ins[0];
         let c = ins[1];
 

@@ -86,7 +86,7 @@ impl Module for Luma {
         0
     }
 
-    fn step(&mut self, _time: f32, _st: StepType, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
         let er = ins[0];
         let eg = ins[1];
         let eb = ins[2];

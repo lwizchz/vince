@@ -27,7 +27,7 @@ None
 
 */
 
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
@@ -69,7 +69,7 @@ pub struct Oscillator {
     #[serde(default)]
     sync: OscillatorSync,
     #[serde(skip)]
-    sync_phase: f32,
+    sync_phase: f64,
     #[serde(skip)]
     sync_count: usize,
 
@@ -140,20 +140,23 @@ impl Module for Oscillator {
         self.knobs[i] = val;
     }
 
-    fn step(&mut self, time: f32, _st: StepType, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f64, _st: StepType, _ins: &[f32]) -> Vec<f32> {
         let t = time;
-        let shift = self.knobs[0];
-        let speed = self.knobs[1];
-        let depth = self.knobs[2];
+        let shift = f64::from(self.knobs[0]);
+        let speed = f64::from(self.knobs[1]);
+        let depth = f64::from(self.knobs[2]);
 
         // FIXME video sync
         match self.sync {
-            OscillatorSync::None => self.sync_phase = 0.0,
+            OscillatorSync::None => {
+                self.sync_phase = 0.0;
+                self.sync_count = 0;
+            },
             OscillatorSync::Horizontal => { // Reset every frame
                 if self.sync_count % (ComponentVideoOut::WIDTH as usize * ComponentVideoOut::HEIGHT as usize) == 0 {
                     self.sync_phase = match self.func {
                         OscillatorFunc::Saw => t,
-                        _ => speed * t,
+                        _ => speed * t * 2.0*PI,
                     };
                     self.sync_count = 0;
                 }
@@ -162,27 +165,27 @@ impl Module for Oscillator {
                 if self.sync_count % (ComponentVideoOut::WIDTH as usize) == 0 {
                     self.sync_phase = match self.func {
                         OscillatorFunc::Saw => t,
-                        _ => speed * t,
+                        _ => speed * t * 2.0*PI,
                     };
                     self.sync_count = 0;
                 }
             },
         }
-        let phase = self.knobs[3] + self.sync_phase;
+        let phase = f64::from(self.knobs[3]) + self.sync_phase;
 
         let val = match self.func {
-            OscillatorFunc::Sine => (speed * t - phase).sin() * depth / 2.0 + shift,
-            OscillatorFunc::Triangle => 1.0 / PI * depth * ((speed * t - phase).sin()).asin() + shift,
-            OscillatorFunc::Square => if (speed * t - phase).sin() >= 0.0 { depth/2.0+shift } else { -depth/2.0+shift },
+            OscillatorFunc::Sine => (speed * t * 2.0*PI - phase).sin() * depth + shift,
+            OscillatorFunc::Triangle => 2.0 / PI * depth * ((speed * t * 2.0*PI - phase).sin()).asin() + shift,
+            OscillatorFunc::Square => if (speed * t * 2.0*PI - phase).sin() >= 0.0 { depth+shift } else { -depth+shift },
             OscillatorFunc::Saw => {
-                let tp = (t - phase) * speed / 2.0 / PI;
-                (tp - (0.5 + tp).floor()) * depth + shift
+                let tp = (t - phase) * speed;
+                2.0 * (tp - (0.5 + tp).floor()) * depth + shift
             },
         };
 
         self.sync_count += 1;
 
-        vec![val]
+        vec![val as f32]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {

@@ -68,7 +68,7 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     }
     fn extend_audio_buffer(&mut self, _ai: &[f32]) {}
 
-    fn step(&mut self, time: f32, st: StepType, ins: &[f32]) -> Vec<f32>;
+    fn step(&mut self, time: f64, st: StepType, ins: &[f32]) -> Vec<f32>;
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {}
 }
 pub trait ModuleClone {

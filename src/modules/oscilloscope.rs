@@ -36,24 +36,24 @@ pub struct Oscilloscope {
     children: Vec<Entity>,
 
     #[serde(skip)]
-    max_t: f32,
+    max_t: f64,
     #[serde(skip)]
     max_val: f32,
     #[serde(skip)]
-    vals: VecDeque<(f32, f32)>,
+    vals: VecDeque<(f64, f32)>,
     #[serde(skip)]
     cycles: usize,
 }
 impl Oscilloscope {
-    const WIDTH: f32 = 150.0;
-    const HEIGHT: f32 = 100.0;
+    const WIDTH: usize = 150;
+    const HEIGHT: usize = 100;
     const MAX_LEN: usize = 2048;
 
     fn gen_points(&mut self) -> Vec<Vec3> {
         match self.vals.front() {
             Some((t0, _)) => {
                 let (mut max_t, mut max_val) = self.vals.iter()
-                    .fold((0.0f32, 0.0f32), |mut a, (t, v)| {
+                    .fold((0.0f64, 0.0f32), |mut a, (t, v)| {
                         if *t > a.0 {
                             a.0 = *t;
                         }
@@ -72,8 +72,8 @@ impl Oscilloscope {
                 self.max_val = max_val;
                 self.vals.iter()
                     .map(|(t, v)| Vec3 {
-                        x: (t - t0) * Self::WIDTH / (max_t - t0),
-                        y: v * Self::HEIGHT / max_val,
+                        x: ((t - t0) * f64::from(Self::WIDTH as u16) / (max_t - t0)) as f32,
+                        y: v * f32::from(Self::HEIGHT as u16) / max_val,
                         z: 0.0,
                     }).collect::<Vec<Vec3>>()
             },
@@ -114,7 +114,7 @@ impl Module for Oscilloscope {
             MaterialMesh2dBundle {
                 mesh: Mesh2dHandle(meshes.add(mesh)),
                 material: materials.add(ColorMaterial::from(Color::GREEN)),
-                transform: Transform::from_xyz(-Self::WIDTH/2.0, 0.0, 0.0)
+                transform: Transform::from_xyz(-f32::from(Self::WIDTH as u16)/2.0, 0.0, 0.0)
                     .with_scale(Vec3 {
                         x: 1.0,
                         y: 0.5,
@@ -177,7 +177,10 @@ impl Module for Oscilloscope {
                             style: Style {
                                 position_type: PositionType::Relative,
                                 position: UiRect::top(Val::Px(10.0)),
-                                size: Size::new(Val::Px(Self::WIDTH), Val::Px(Self::HEIGHT)),
+                                size: Size::new(
+                                    Val::Px(f32::from(Self::WIDTH as u16)),
+                                    Val::Px(f32::from(Self::HEIGHT as u16)),
+                                ),
                                 ..default()
                             },
                             image: UiImage::new(image_handle),
@@ -210,7 +213,7 @@ impl Module for Oscilloscope {
         0
     }
 
-    fn step(&mut self, time: f32, st: StepType, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f64, st: StepType, ins: &[f32]) -> Vec<f32> {
         if st == StepType::Video {
             return vec![];
         }

@@ -38,11 +38,11 @@ pub struct ComponentVideoOut {
     #[serde(skip)]
     scan: usize,
     #[serde(skip)]
-    rgb: VecDeque<(f32, [f32; 3])>,
+    rgb: VecDeque<(f64, [f32; 3])>,
 }
 impl ComponentVideoOut {
-    pub const WIDTH: f32 = 640.0;
-    pub const HEIGHT: f32 = 480.0;
+    pub const WIDTH: usize = 640;
+    pub const HEIGHT: usize = 480;
     const MAX_LEN: usize = 2048;
 }
 #[typetag::deserialize]
@@ -104,7 +104,10 @@ impl Module for ComponentVideoOut {
                             style: Style {
                                 position_type: PositionType::Relative,
                                 position: UiRect::top(Val::Px(10.0)),
-                                size: Size::new(Val::Px(Self::WIDTH), Val::Px(Self::HEIGHT)),
+                                size: Size::new(
+                                    Val::Px(f32::from(Self::WIDTH as u16)),
+                                    Val::Px(f32::from(Self::HEIGHT as u16)),
+                                ),
                                 ..default()
                             },
                             image: UiImage::new(image_handle),
@@ -154,7 +157,7 @@ impl Module for ComponentVideoOut {
         0
     }
 
-    fn step(&mut self, time: f32, _st: StepType, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
         let r = ins[0];
         let g = ins[1];
         let b = ins[2];

@@ -107,7 +107,7 @@ impl Module for Noise {
         1
     }
 
-    fn step(&mut self, time: f32, st: StepType, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f64, st: StepType, _ins: &[f32]) -> Vec<f32> {
         if st == StepType::Video {
             return vec![0.0];
         }
@@ -119,8 +119,8 @@ impl Module for Noise {
             //     vec![thread_rng().gen_range(-1.0..=1.0) * self.knobs[0]]
             // },
 
-            NoiseFunc::Perlin => vec![perlin(time) * self.knobs[0]],
-            NoiseFunc::Simplex => vec![simplex(time) * self.knobs[0]],
+            NoiseFunc::Perlin => vec![perlin(time) as f32 * self.knobs[0]],
+            NoiseFunc::Simplex => vec![simplex(time) as f32 * self.knobs[0]],
         }
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
@@ -150,18 +150,18 @@ const PERM: [i32; 256] = [
     157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254, 138, 236, 205,
     93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180,
 ];
-fn perlin(mut x: f32) -> f32 {
-    fn fade(t: f32) -> f32 {
+fn perlin(mut x: f64) -> f64 {
+    fn fade(t: f64) -> f64 {
         t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
     }
-    fn grad(hash: i32, x: f32) -> f32 {
+    fn grad(hash: i32, x: f64) -> f64 {
         if hash & 1 == 1 {
             x
         } else {
             -x
         }
     }
-    fn lerp(t: f32, a: f32, b: f32) -> f32 {
+    fn lerp(t: f64, a: f64, b: f64) -> f64 {
         a + t * (b-a)
     }
 
@@ -180,10 +180,10 @@ fn perlin(mut x: f32) -> f32 {
         grad(p[xint+1], x-1.0),
     )
 }
-fn simplex(x: f32) -> f32 {
-    fn grad(hash: i32, x: f32) -> f32 {
+fn simplex(x: f64) -> f64 {
+    fn grad(hash: i32, x: f64) -> f64 {
         let h = hash & 15;
-        let g = 1.0 + (h & 7) as f32;
+        let g = 1.0 + (h & 7) as f64;
         if h & 8 == 0 {
             g * x
         } else {
@@ -198,7 +198,7 @@ fn simplex(x: f32) -> f32 {
 
     let i0 = x.floor() as usize;
     let i1 = i0 + 1;
-    let x0 = x - i0 as f32;
+    let x0 = x - i0 as f64;
     let x1 = x0 - 1.0;
 
     let t0 = (1.0 - x0 * x0).powi(2);
