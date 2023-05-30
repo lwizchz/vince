@@ -1,0 +1,25 @@
+[modules]
+0M = { type = "ComponentVideoOut" }
+
+1M = { type = "Oscillator", func = "Sine", sync = "Vertical", knobs = [440.0, 40.0, 220.0, 0.0] }
+2M = { type = "Oscilloscope" }
+3M = { type = "Oscillator", func = "Sine", sync = "Horizontal", knobs = [0.5, 440.0, 0.5, 0.0] }
+4M = { type = "Oscilloscope" }
+
+5M = { type = "Oscillator", func = "Saw", sync = "Horizontal", knobs = [0.5, 1.0, 0.5, 0.0] }
+6M = { type = "Oscilloscope" }
+
+[patches]
+1M0O = [
+    "2M0I",
+    "3M1K",
+]
+3M0O = [
+    "0M0I",
+    "0M1I",
+    "4M0I",
+]
+5M0O = [
+    "0M2I",
+    "6M0I",
+]
