@@ -9,9 +9,7 @@ which are used to adjust module-specific parameters such as gain or speed.
 
 ## Usage
 
-Be sure to run the program in release mode since development mode has poor
-performance. Also memory will start to balloon since the output buffers won't
-be consumed quickly enough.
+It is recommended to run in release mode but it's no longer required.
 
 ```
 $ cargo run --release racks/rack0.toml
@@ -74,7 +72,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use std::time::Duration;
 use std::env;
 
-use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution}, render::{render_resource::PrimitiveTopology}};
+use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode}, render::{render_resource::PrimitiveTopology}};
 
 use bevy_common_assets::toml::TomlAssetPlugin;
 
@@ -85,12 +83,7 @@ pub mod patch;
 use patch::PatchComponent;
 
 pub mod modules;
-use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent};
-
-#[cfg(debug_assertions)]
-const DOWNSAMPLE: u32 = 8;
-#[cfg(not(debug_assertions))]
-const DOWNSAMPLE: u32 = 1;
+use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent, ModuleKey, ModuleIOK};
 
 const FRAME_RATE: u16 = 60;
 static mut AUDIO_OUTPUT_STREAM: Option<cpal::Stream> = None;
@@ -106,6 +99,7 @@ fn main() {
                 title: "Vince Audio-Video Synth".to_string(),
                 resolution: WindowResolution::new(1920.0, 1080.0),
                 resizable: false,
+                present_mode: PresentMode::AutoNoVsync,
                 ..default()
             }),
             ..default()
@@ -178,10 +172,10 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
             },
         );
         component.with_children(|parent| {
-            let mut sorted_modules = rack.modules.iter_mut().collect::<Vec<(&String, &mut Box<dyn Module>)>>();
-            sorted_modules.sort_by_key(|m| m.0.parse::<usize>().unwrap());
+            let mut sorted_modules = rack.modules.iter_mut().collect::<Vec<(&ModuleKey, &mut Box<dyn Module>)>>();
+            sorted_modules.sort_by_key(|m| m.0);
             for m in sorted_modules {
-                let id = m.0.parse::<usize>().unwrap();
+                let id = m.0.id;
                 m.1.init(
                     id,
                     parent.spawn((
@@ -242,43 +236,47 @@ fn setup_patches(mut commands: Commands, racks: Res<Assets<Rack>>, h_rack: ResMu
             Color::BLUE,
             Color::PURPLE,
         ];
-        let mut sorted_patches = rack.patches.iter().collect::<Vec<(&str, &str)>>();
-        sorted_patches.sort_by_key(|p| format!("{}{}", p.0, p.1));
+        let mut sorted_patches = rack.patches.iter().collect::<Vec<(&ModuleKey, &ModuleKey)>>();
+        sorted_patches.sort();
         for (i, patch) in sorted_patches.iter().enumerate() {
-            if let Some(mout_id) = patch.0.split_once('M') {
-                if let Some(min_id) = patch.1.split_once('M') {
-                    if let Some(mout) = rack.modules.get(mout_id.0) {
-                        if let Some(min) = rack.modules.get(min_id.0) {
-                            let startpos = mout.get_pos(&q_child, &q_transform, &q_camera) + Vec3::new(50.0, 0.0, 0.0);
-                            let endpos = min.get_pos(&q_child, &q_transform, &q_camera) + Vec3::new(-50.0, 0.0, 0.0);
-                            let mut bottom = (startpos.y+endpos.y)/2.0;
-                            bottom = bottom.min(startpos.y).min(endpos.y);
-                            let midpos = Vec3::new((startpos.x+endpos.x)/2.0, bottom - 50.0, 0.0);
+            let mout_id = ModuleKey {
+                id: patch.0.id,
+                iok: ModuleIOK::None,
+            };
+            let min_id = ModuleKey {
+                id: patch.1.id,
+                iok: ModuleIOK::None,
+            };
+            if let Some(mout) = rack.modules.get(&mout_id) {
+                if let Some(min) = rack.modules.get(&min_id) {
+                    let startpos = mout.get_pos(&q_child, &q_transform, &q_camera) + Vec3::new(50.0, 0.0, 0.0);
+                    let endpos = min.get_pos(&q_child, &q_transform, &q_camera) + Vec3::new(-50.0, 0.0, 0.0);
+                    let mut bottom = (startpos.y+endpos.y)/2.0;
+                    bottom = bottom.min(startpos.y).min(endpos.y);
+                    let midpos = Vec3::new((startpos.x+endpos.x)/2.0, bottom - 50.0, 0.0);
 
-                            let points: Vec<Vec3> = vec![
-                                startpos,
-                                startpos.lerp(midpos, 0.5) - Vec3::Y * 3.0,
-                                midpos,
-                                midpos.lerp(endpos, 0.5) - Vec3::Y * 3.0,
-                                endpos,
-                            ].iter()
-                                .map(|p| *p - startpos)
-                                .collect();
+                    let points: Vec<Vec3> = vec![
+                        startpos,
+                        startpos.lerp(midpos, 0.5) - Vec3::Y * 3.0,
+                        midpos,
+                        midpos.lerp(endpos, 0.5) - Vec3::Y * 3.0,
+                        endpos,
+                    ].iter()
+                        .map(|p| *p - startpos)
+                        .collect();
 
-                            let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
-                            mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points);
+                    let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
+                    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points);
 
-                            let _component = commands.spawn((
-                                MaterialMesh2dBundle {
-                                    mesh: meshes.add(mesh).into(),
-                                    material: materials.add(colors[i % colors.len()].into()),
-                                    transform: Transform::from_translation(startpos),
-                                    ..default()
-                                },
-                                PatchComponent,
-                            ));
-                        }
-                    }
+                    let _component = commands.spawn((
+                        MaterialMesh2dBundle {
+                            mesh: meshes.add(mesh).into(),
+                            material: materials.add(colors[i % colors.len()].into()),
+                            transform: Transform::from_translation(startpos),
+                            ..default()
+                        },
+                        PatchComponent,
+                    ));
                 }
             }
         }
@@ -324,17 +322,17 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut
     if let Some(rack) = racks.get_mut(&h_rack.0) {
         if let Some(audio_context) = &rack.audio_context {
             let t = time.elapsed_seconds_wrapped();
-            let audio_steps = audio_context.output.config.sample_rate.0 / u32::from(FRAME_RATE) / DOWNSAMPLE;
+            let audio_steps = audio_context.output.config.sample_rate.0 / u32::from(FRAME_RATE);
             let ad = Duration::from_micros(1000 * 1000 / u64::from(audio_steps) / u64::from(FRAME_RATE)).as_secs_f64();
 
-            let video_steps = 209 / DOWNSAMPLE;
-            let _vd = Duration::from_nanos(1000 * 1000 * 1000 / u64::from(audio_steps) / u64::from(video_steps) / u64::from(FRAME_RATE)).as_secs_f64();
+            // let video_steps: u32 = 209;
+            // let vd = Duration::from_nanos(1000 * 1000 * 1000 / u64::from(audio_steps) / u64::from(video_steps) / u64::from(FRAME_RATE)).as_secs_f64();
 
             rack.step(t, StepType::Key);
-            for i in 1..audio_steps {
+            for i in 1..=audio_steps {
                 rack.step(t + (f64::from(i) * ad) as f32, StepType::Audio);
-                // for j in 1..video_steps {
-                //     rack.step(t + (f64::from(i) * ad + f64::from(j) * _vd) as f32, StepType::Video);
+                // for j in 1..=video_steps {
+                //     rack.step(t + (f64::from(i) * ad + f64::from(j) * vd) as f32, StepType::Video);
                 // }
             }
         } else {

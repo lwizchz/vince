@@ -96,18 +96,15 @@ impl Module for AudioOut {
     }
 
     fn drain_audio_buffer(&mut self) -> Vec<f32> {
-        self.audio_buffer.drain(0..).collect()
+        self.audio_buffer.drain(..).collect()
     }
 
-    fn step(&mut self, _time: f32, ft: StepType, ins: &[f32]) -> Vec<f32> {
-        if ft == StepType::Video {
+    fn step(&mut self, _time: f32, st: StepType, ins: &[f32]) -> Vec<f32> {
+        if st == StepType::Video {
             return vec![];
         }
 
-        self.audio_buffer.extend(
-            ins.iter()
-                .map(|inp| inp * self.knobs[0])
-        );
+        self.audio_buffer.push(ins[0] * self.knobs[0]);
 
         vec![]
     }

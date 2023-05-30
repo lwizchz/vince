@@ -1,17 +1,17 @@
 [modules]
-0 = { name = "Audio Out", type = "AudioOut", knobs = [1.0] }
+0M = { name = "Audio Out", type = "AudioOut", knobs = [1.0] }
 
-1 = { name = "LFO 1", type = "Oscillator", func = "Square", knobs = [0.0, 1.0, 200.0, 0.0] }
-# 2 = { name = "Scope 1", type = "Oscilloscope" }
-3 = { name = "LFO 2", type = "Oscillator", func = "Triangle", knobs = [25.0, 200.0, 2.0, 0.0] }
-# 4 = { name = "Scope 2", type = "Oscilloscope" }
-5 = { name = "LFO 3", type = "Oscillator", func = "Sine", knobs = [0.0, 2500.0, 1.0, 0.0] }
-6 = { name = "Scope 3", type = "Oscilloscope" }
+1M = { name = "LFO 1", type = "Oscillator", func = "Square", knobs = [0.0, 1.0, 200.0, 0.0] }
+# 2M = { name = "Scope 1", type = "Oscilloscope" }
+3M = { name = "LFO 2", type = "Oscillator", func = "Triangle", knobs = [25.0, 200.0, 2.0, 0.0] }
+# 4M = { name = "Scope 2", type = "Oscilloscope" }
+5M = { name = "LFO 3", type = "Oscillator", func = "Sine", knobs = [0.0, 2500.0, 1.0, 0.0] }
+6M = { name = "Scope 3", type = "Oscilloscope" }
 
-7 = { name = "LFO 4", type = "Oscillator", func = "Sine", knobs = [1.0, 1000.0, 1.0, 0.0] }
-8 = { name = "Scope 4", type = "Oscilloscope" }
-9 = { name = "Multiplier", type = "Multiplier" }
-10 = { name = "Scope 5", type = "Oscilloscope" }
+7M = { name = "LFO 4", type = "Oscillator", func = "Sine", knobs = [1.0, 1000.0, 1.0, 0.0] }
+8M = { name = "Scope 4", type = "Oscilloscope" }
+9M = { name = "Multiplier", type = "Multiplier" }
+10M = { name = "Scope 5", type = "Oscilloscope" }
 
 [patches]
 1M0O = [

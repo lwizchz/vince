@@ -1,8 +1,8 @@
 [modules]
-0 = { name = "Audio Out", type = "AudioOut", knobs = [1.0] }
+0M = { name = "Audio Out", type = "AudioOut", knobs = [1.0] }
 
-1 = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
-2 = { type = "Oscilloscope" }
+1M = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
+2M = { type = "Oscilloscope" }
 
 [patches]
 1M0O = [

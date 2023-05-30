@@ -107,8 +107,8 @@ impl Module for Noise {
         1
     }
 
-    fn step(&mut self, time: f32, ft: StepType, _ins: &[f32]) -> Vec<f32> {
-        if ft == StepType::Video {
+    fn step(&mut self, time: f32, st: StepType, _ins: &[f32]) -> Vec<f32> {
+        if st == StepType::Video {
             return vec![0.0];
         }
 

@@ -210,17 +210,15 @@ impl Module for Oscilloscope {
         0
     }
 
-    fn step(&mut self, time: f32, ft: StepType, ins: &[f32]) -> Vec<f32> {
-        if ft == StepType::Video {
+    fn step(&mut self, time: f32, st: StepType, ins: &[f32]) -> Vec<f32> {
+        if st == StepType::Video {
             return vec![];
         }
 
         let val = ins[0];
 
-        if !self.vals.is_empty() {
-            if val.signum() != self.vals.iter().last().unwrap().1.signum() {
-                self.cycles += 1;
-            }
+        if !self.vals.is_empty() && val.signum() != self.vals.iter().last().unwrap().1.signum() {
+            self.cycles += 1;
         }
         if self.cycles >= 14 {
             self.vals.pop_front();

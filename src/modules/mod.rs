@@ -4,6 +4,8 @@ All synth modules are defined here.
 
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
+use serde::{Deserialize, de::{Visitor, self}};
+
 use crate::{StepType, MainCameraComponent};
 
 pub mod audio_out;
@@ -66,7 +68,7 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     }
     fn extend_audio_buffer(&mut self, _ai: &[f32]) {}
 
-    fn step(&mut self, time: f32, ft: StepType, ins: &[f32]) -> Vec<f32>;
+    fn step(&mut self, time: f32, st: StepType, ins: &[f32]) -> Vec<f32>;
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {}
 }
 pub trait ModuleClone {
@@ -95,3 +97,85 @@ pub struct ModuleTextComponent;
 pub struct ModuleMeshComponent;
 #[derive(Component, Debug, Clone)]
 pub struct ModuleImageComponent;
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum ModuleIOK {
+    #[default]
+    None,
+    Input(usize),
+    Output(usize),
+    Knob(usize),
+}
+impl ModuleIOK {
+    pub fn is_none(&self) -> bool {
+        matches!(self, ModuleIOK::None)
+    }
+    pub fn is_input(&self) -> bool {
+        matches!(self, ModuleIOK::Input(_))
+    }
+    pub fn is_output(&self) -> bool {
+        matches!(self, ModuleIOK::Output(_))
+    }
+    pub fn is_knob(&self) -> bool {
+        matches!(self, ModuleIOK::Knob(_))
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ModuleKey {
+    pub id: usize,
+    pub iok: ModuleIOK,
+}
+struct ModuleKeyVisitor;
+impl<'de> Visitor<'de> for ModuleKeyVisitor {
+    type Value = ModuleKey;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("a module in the format \"XM[Y{I, O, K}]\"")
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        if let Some((id, iok)) = v.split_once('M') {
+            let id = id.parse::<usize>()
+                .ok().ok_or_else(|| de::Error::invalid_value(de::Unexpected::Str(id), &"an ID string parsable as a usize"))?;
+
+            match iok.get(..(iok.len().saturating_sub(1))) {
+                Some(iok) if !iok.is_empty() => {
+                    let iok = iok.parse::<usize>()
+                        .ok().ok_or_else(|| de::Error::invalid_value(de::Unexpected::Str(iok), &"an IOK string parsable as a usize"))?;
+                    let iok = match v.get(v.len()-1..) {
+                        Some("I") => ModuleIOK::Input(iok),
+                        Some("O") => ModuleIOK::Output(iok),
+                        Some("K") => ModuleIOK::Knob(iok),
+
+                        Some(t) => return Err(de::Error::invalid_value(de::Unexpected::Str(t), &"an I, O, or K")),
+                        None => return Err(de::Error::invalid_value(de::Unexpected::Other("nothing"), &"an I, O, or K")),
+                    };
+
+                    return Ok(ModuleKey {
+                        id,
+                        iok,
+                    });
+                },
+                Some(_) | None => {
+                    return Ok(ModuleKey {
+                        id,
+                        iok: ModuleIOK::None,
+                    });
+                },
+            }
+        }
+
+        Err(de::Error::invalid_value(de::Unexpected::Str(v), &"a module in the format \"XM[Y{I, O, K}]\""))
+    }
+}
+impl<'de> Deserialize<'de> for ModuleKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(ModuleKeyVisitor)
+    }
+}

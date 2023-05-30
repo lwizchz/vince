@@ -77,6 +77,32 @@ pub struct VideoIn {
 }
 impl VideoIn {
     const GAMMA: f32 = 2.2;
+
+    fn queue_video_in(&mut self) {
+        match &mut self.source {
+            VideoSource::Screen(screen) => {
+                if screen.is_none() {
+                    *screen = Some(ScreenSource {
+                        screen: *Screen::all().expect("Failed to get screens for video input")
+                            .first().expect("Failed to get screens for video input"),
+                        images: Arc::new(Mutex::new(vec![])),
+                    });
+                }
+                if let Some(screen) = screen {
+                    let screen = screen.clone();
+                    let images = screen.images.clone();
+                    std::thread::spawn(move || {
+                        let image = screen.screen
+                            .capture_area(0, 0, ComponentVideoOut::WIDTH as u32, ComponentVideoOut::HEIGHT as u32)
+                            .expect("Failed to capture screen for video input");
+                        if let Ok(mut images) = images.lock() {
+                            images.push(image);
+                        }
+                    });
+                }
+            },
+        }
+    }
 }
 #[typetag::deserialize]
 impl Module for VideoIn {
@@ -110,6 +136,8 @@ impl Module for VideoIn {
             });
             self.component = Some(component.id());
         });
+
+        self.queue_video_in();
     }
 
     fn id(&self) -> Option<usize> {
@@ -129,32 +157,10 @@ impl Module for VideoIn {
         0
     }
 
-    fn step(&mut self, _time: f32, ft: StepType, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, _time: f32, st: StepType, _ins: &[f32]) -> Vec<f32> {
         // Fetch video input
-        if ft == StepType::Key {
-            match &mut self.source {
-                VideoSource::Screen(screen) => {
-                    if screen.is_none() {
-                        *screen = Some(ScreenSource {
-                            screen: *Screen::all().expect("Failed to get screens for video input")
-                                .first().expect("Failed to get screens for video input"),
-                            images: Arc::new(Mutex::new(vec![])),
-                        });
-                    }
-                    if let Some(screen) = screen {
-                        let screen = screen.clone();
-                        let images = screen.images.clone();
-                        std::thread::spawn(move || {
-                            let image = screen.screen
-                                .capture_area(0, 0, ComponentVideoOut::WIDTH as u32, ComponentVideoOut::HEIGHT as u32)
-                                .expect("Failed to capture screen for video input");
-                            if let Ok(mut images) = images.lock() {
-                                images.push(image);
-                            }
-                        });
-                    }
-                },
-            }
+        if st == StepType::Key {
+            self.queue_video_in();
         }
 
         // Process video input to buffer
@@ -162,8 +168,7 @@ impl Module for VideoIn {
             VideoSource::Screen(screen) => {
                 if let Some(screen) = screen {
                     if let Ok(mut images) = screen.images.try_lock() {
-                        // FIXME put all images in the video buffer
-                        for image in images.drain(0..) {
+                        for image in images.drain(..) {
                             if self.video_buffer.is_empty() {
                                 self.video_buffer.extend(image.bgra());
                             }
@@ -177,10 +182,10 @@ impl Module for VideoIn {
         if self.video_buffer.is_empty() {
             vec![-1.0, -1.0, -1.0]
         } else {
-            let b = f32::from(self.video_buffer.pop_front().unwrap()) / 255.0;
-            let g = f32::from(self.video_buffer.pop_front().unwrap()) / 255.0;
-            let r = f32::from(self.video_buffer.pop_front().unwrap()) / 255.0;
-            let _a = f32::from(self.video_buffer.pop_front().unwrap()) / 255.0;
+            let bgra: Vec<u8> = self.video_buffer.drain(0..4).collect();
+            let b = f32::from(bgra[0]) / 255.0;
+            let g = f32::from(bgra[1]) / 255.0;
+            let r = f32::from(bgra[2]) / 255.0;
 
             let er = r.powf(VideoIn::GAMMA);
             let eg = g.powf(VideoIn::GAMMA);

@@ -155,7 +155,7 @@ impl Module for CompositeVideoOut {
         0
     }
 
-    fn step(&mut self, time: f32, _ft: StepType, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f32, _st: StepType, ins: &[f32]) -> Vec<f32> {
         let y = ins[0];
         let c = ins[1];
 
@@ -179,7 +179,7 @@ impl Module for CompositeVideoOut {
         if let Some(component) = self.children.get(1) {
             if let Ok(h_image) = q_image.get_mut(*component) {
                 if let Some(image) = images.get_mut(&h_image.texture) {
-                    for (luma, chroma) in self.luma.drain(0..).zip(self.chroma.drain(0..)) {
+                    for (luma, chroma) in self.luma.drain(..).zip(self.chroma.drain(..)) {
                         let y = luma.1;
                         let c = chroma.1;
 

@@ -7,7 +7,8 @@ use bevy::reflect::TypeUuid;
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use serde::Deserialize;
 
-use crate::{DOWNSAMPLE, StepType, patch::Patches, modules::{Module, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
+use crate::modules::ModuleIOK;
+use crate::{StepType, patch::Patches, modules::{ModuleKey, Module, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 pub struct AudioContextOutput {
     _device: cpal::Device,
@@ -39,7 +40,7 @@ pub struct Rack {
     #[serde(skip)]
     pub(crate) audio_context: Option<AudioContext>,
 
-    pub modules: HashMap<String, Box<dyn Module>>,
+    pub modules: HashMap<ModuleKey, Box<dyn Module>>,
     pub patches: Patches,
 }
 impl Rack {
@@ -128,30 +129,33 @@ impl Rack {
             self.init_audio();
         }
 
-        let mut stepped: Vec<String> = Vec::with_capacity(self.modules.len());
-        let mut outs: HashMap<String, f32> = HashMap::with_capacity(self.modules.iter().fold(0, |a, m| a + m.1.outputs()));
+        let mut stepped: Vec<usize> = Vec::with_capacity(self.modules.len());
+        let mut outs: HashMap<ModuleKey, f32> = HashMap::with_capacity(self.modules.len());
 
         // Step all modules which take no inputs
-        for (idx, m) in self.modules.iter_mut()
-            .filter(|(idx, m)|
+        for (k, m) in self.modules.iter_mut()
+            .filter(|(k, m)|
                 m.inputs() == 0
                 || !self.patches.iter()
-                    .any(|p| p.1.starts_with(&format!("{idx}M")))
+                    .any(|p| p.1.id == k.id)
             )
         {
             let mouts = m.step(time, ft, &vec![0.0; m.inputs()]);
-            stepped.push(idx.clone());
+            stepped.push(k.id);
             for (i, mo) in mouts.iter().enumerate() {
-                outs.insert(format!("{idx}M{i}O"), *mo);
+                outs.insert(ModuleKey {
+                    id: k.id,
+                    iok: ModuleIOK::Output(i),
+                }, *mo);
             }
         }
 
         // Step all other modules
         while stepped.len() < self.modules.len() {
-            for (idx, m) in &mut self.modules {
-                if !stepped.contains(idx) {
-                    let inpatches: Vec<(&str, &str)> = self.patches.iter()
-                        .filter(|p| p.1.starts_with(&format!("{idx}M")))
+            for (k, m) in &mut self.modules {
+                if !stepped.contains(&k.id) {
+                    let inpatches: Vec<(&ModuleKey, &ModuleKey)> = self.patches.iter()
+                        .filter(|p| p.1.id == k.id)
                         .collect();
                     if inpatches.iter()
                         .all(|p| {
@@ -166,14 +170,10 @@ impl Rack {
                                 .find(|o| o.0 == p.0)
                             {
                                 Some(o) => {
-                                    let i = &p.1[(format!("{idx}M").len())..(p.1.len() - 1)]
-                                        .parse::<usize>().expect("failed to parse patch input index");
-                                    if p.1.ends_with('K') {
-                                        m.set_knob(*i, *o.1);
-                                    } else if p.1.ends_with('I') {
-                                        mins[*i] = *o.1;
-                                    } else {
-                                        unreachable!();
+                                    match p.1.iok {
+                                        ModuleIOK::Input(i) => mins[i] = *o.1,
+                                        ModuleIOK::Knob(i) => m.set_knob(i, *o.1),
+                                        _ => unreachable!(),
                                     }
                                 },
                                 None => unreachable!(),
@@ -181,9 +181,12 @@ impl Rack {
                         }
 
                         let mouts = m.step(time, ft, &mins);
-                        stepped.push(idx.clone());
+                        stepped.push(k.id);
                         for (i, mo) in mouts.iter().enumerate() {
-                            outs.insert(format!("{idx}M{i}O"), *mo);
+                            outs.insert(ModuleKey {
+                                id: k.id,
+                                iok: ModuleIOK::Output(i),
+                            }, *mo);
                         }
                     }
                 }
@@ -220,15 +223,12 @@ impl Rack {
                 audio_context.output.buffer = Vec::with_capacity(BUFSIZE);
             }
 
-            audio_context.output.buffer.extend(
-                ao.iter()
-                    .flat_map(|sample| std::iter::repeat(*sample).take(DOWNSAMPLE as usize))
-            );
+            audio_context.output.buffer.extend(ao);
 
             // Consume captured audio
             if let Some(input) = &mut audio_context.input {
                 if let Ok(inbuf) = &mut input.buffer.lock() {
-                    let buf = inbuf.drain(0..).collect::<Vec<f32>>();
+                    let buf = inbuf.drain(..).collect::<Vec<f32>>();
                     for m in &mut self.modules {
                         m.1.extend_audio_buffer(&buf);
                     }
@@ -237,25 +237,21 @@ impl Rack {
         }
 
         // Apply feedback patches to knobs
-        for (idx, m) in self.modules.iter_mut()
-            .filter(|(idx, _)|
+        for (k, m) in self.modules.iter_mut()
+            .filter(|(k, _)|
                 self.patches.iter()
-                    .any(|p| p.1.starts_with(&format!("{idx}M")) && p.1.ends_with('K'))
+                    .any(|p| p.1.id == k.id && p.1.iok.is_knob())
             )
         {
-            let inpatches: Vec<(&str, &str)> = self.patches.iter()
-                .filter(|p| p.1.starts_with(&format!("{idx}M")))
+            let inpatches: Vec<(&ModuleKey, &ModuleKey)> = self.patches.iter()
+                .filter(|p| p.1.id == k.id)
                 .collect();
             for p in inpatches {
                 if let Some(o) = outs.iter().find(|o| o.0 == p.0) {
-                    let i = &p.1[(format!("{idx}M").len())..(p.1.len() - 1)]
-                        .parse::<usize>().expect("failed to parse patch input index");
-                    if p.1.ends_with('K') {
-                        m.set_knob(*i, *o.1);
-                    } else if p.1.ends_with('I') {
-                        // TODO apply feedback patches to inputs?
-                    } else {
-                        unreachable!();
+                    match p.1.iok {
+                        ModuleIOK::Knob(i) => m.set_knob(i, *o.1),
+                        ModuleIOK::Input(_) => {}, // TODO apply feedback patches to inputs?
+                        _ => unreachable!(),
                     }
                 }
             }

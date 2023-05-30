@@ -1,14 +1,14 @@
 [modules]
-0 = { type = "ComponentVideoOut" }
-1 = { type = "CompositeVideoOut" }
+0M = { name = "RGB Video", type = "ComponentVideoOut" }
+1M = { name = "Luma Video", type = "CompositeVideoOut" }
 
-2 = { name = "Screen Record", type = "VideoIn", source = "Screen" }
-3 = { name = "Red", type = "Oscilloscope" }
-4 = { name = "Green", type = "Oscilloscope" }
-5 = { name = "Blue", type = "Oscilloscope" }
+2M = { name = "Screen Record", type = "VideoIn", source = "Screen" }
+3M = { name = "Red", type = "Oscilloscope" }
+4M = { name = "Green", type = "Oscilloscope" }
+5M = { name = "Blue", type = "Oscilloscope" }
 
-6 = { type = "Luma" }
-7 = { name = "Luma", type = "Oscilloscope" }
+6M = { type = "Luma" }
+7M = { name = "Luma", type = "Oscilloscope" }
 
 [patches]
 2M0O = [

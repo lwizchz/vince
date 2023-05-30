@@ -9,7 +9,12 @@ readme = true
 repository = "https://github.com/lwizchz/vince"
 keywords = ["audio", "video", "synth", "dsp"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+lto = true
+codegen-units = 1
 
 [dependencies]
 bevy = { version = "0.10.1", features = ["dynamic_linking"] }

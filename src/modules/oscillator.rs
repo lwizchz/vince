@@ -140,7 +140,7 @@ impl Module for Oscillator {
         self.knobs[i] = val;
     }
 
-    fn step(&mut self, time: f32, _ft: StepType, _ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f32, _st: StepType, _ins: &[f32]) -> Vec<f32> {
         let t = time;
         let shift = self.knobs[0];
         let speed = self.knobs[1];

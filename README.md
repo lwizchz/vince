@@ -11,9 +11,7 @@ which are used to adjust module-specific parameters such as gain or speed.
 
 ## Usage
 
-Be sure to run the program in release mode since development mode has poor
-performance. Also memory will start to balloon since the output buffers won't
-be consumed quickly enough.
+It is recommended to run in release mode but it's no longer required.
 
 ```
 $ cargo run --release racks/rack0.toml

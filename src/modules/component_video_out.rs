@@ -154,7 +154,7 @@ impl Module for ComponentVideoOut {
         0
     }
 
-    fn step(&mut self, time: f32, _ft: StepType, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f32, _st: StepType, ins: &[f32]) -> Vec<f32> {
         let r = ins[0];
         let g = ins[1];
         let b = ins[2];
@@ -174,7 +174,7 @@ impl Module for ComponentVideoOut {
         if let Some(component) = self.children.get(1) {
             if let Ok(h_image) = q_image.get_mut(*component) {
                 if let Some(image) = images.get_mut(&h_image.texture) {
-                    for rgb in self.rgb.drain(0..) {
+                    for rgb in self.rgb.drain(..) {
                         let r = (rgb.1[0] * 255.0) as u8;
                         let g = (rgb.1[1] * 255.0) as u8;
                         let b = (rgb.1[2] * 255.0) as u8;
