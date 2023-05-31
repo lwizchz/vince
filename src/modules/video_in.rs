@@ -180,7 +180,7 @@ impl Module for VideoIn {
 
         // Pop output from buffer
         if self.video_buffer.is_empty() {
-            vec![-1.0, -1.0, -1.0]
+            vec![f32::NAN, f32::NAN, f32::NAN]
         } else {
             let bgra: Vec<u8> = self.video_buffer.drain(0..4).collect();
             let b = f32::from(bgra[0]) / 255.0;

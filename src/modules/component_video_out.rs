@@ -158,12 +158,21 @@ impl Module for ComponentVideoOut {
     }
 
     fn step(&mut self, time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
-        let r = ins[0];
-        let g = ins[1];
-        let b = ins[2];
+        let mut r = ins[0];
+        let mut g = ins[1];
+        let mut b = ins[2];
 
-        if r < 0.0 || g < 0.0 || b < 0.0 {
+        if r.is_nan() && g.is_nan() && b.is_nan() {
             return vec![];
+        }
+        if r.is_nan() {
+            r = 0.0;
+        }
+        if g.is_nan() {
+            g = 0.0;
+        }
+        if b.is_nan() {
+            b = 0.0;
         }
 
         if self.rgb.len() > Self::MAX_LEN {

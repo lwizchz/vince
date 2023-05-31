@@ -32,7 +32,7 @@ pub struct AudioOut {
     children: Vec<Entity>,
 
     #[serde(skip)]
-    audio_buffer: Vec<f32>,
+    audio_buffer: Vec<[f32; 2]>,
 
     knobs: [f32; 1],
 }
@@ -79,7 +79,7 @@ impl Module for AudioOut {
     }
 
     fn inputs(&self) -> usize {
-        1
+        2
     }
     fn outputs(&self) -> usize {
         0
@@ -95,7 +95,7 @@ impl Module for AudioOut {
         self.knobs[i] = val;
     }
 
-    fn drain_audio_buffer(&mut self) -> Vec<f32> {
+    fn drain_audio_buffer(&mut self) -> Vec<[f32; 2]> {
         self.audio_buffer.drain(..).collect()
     }
 
@@ -104,7 +104,13 @@ impl Module for AudioOut {
             return vec![];
         }
 
-        self.audio_buffer.push(ins[0] * self.knobs[0]);
+        let left = ins[0] * self.knobs[0];
+        let right = if ins[1].is_nan() {
+            left
+        } else {
+            ins[1] * self.knobs[0]
+        };
+        self.audio_buffer.push([left, right]);
 
         vec![]
     }

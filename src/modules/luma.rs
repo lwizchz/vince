@@ -91,8 +91,8 @@ impl Module for Luma {
         let eg = ins[1];
         let eb = ins[2];
 
-        if er < 0.0 || eg < 0.0 || eb < 0.0 {
-            return vec![-1.0];
+        if er.is_nan() || eg.is_nan() || eb.is_nan() {
+            return vec![f32::NAN];
         }
 
         let ey = 0.30 * er + 0.59 * eg + 0.11 * eb;

@@ -67,7 +67,7 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     }
     fn set_knob(&mut self, _i: usize, _val: f32) {}
 
-    fn drain_audio_buffer(&mut self) -> Vec<f32> {
+    fn drain_audio_buffer(&mut self) -> Vec<[f32; 2]> {
         vec![]
     }
     fn extend_audio_buffer(&mut self, _ai: &[f32]) {}

@@ -82,11 +82,7 @@ impl Module for Multiplier {
         0
     }
 
-    fn step(&mut self, _time: f64, st: StepType, ins: &[f32]) -> Vec<f32> {
-        if st == StepType::Video {
-            return vec![0.0];
-        }
-
+    fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
         vec![
             ins[0] * ins[1]
         ]

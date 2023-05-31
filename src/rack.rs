@@ -22,7 +22,7 @@ pub struct AudioContextOutput {
     pub(crate) config: cpal::StreamConfig,
 
     buf_stream_handle: oddio::Handle<oddio::Stream<[f32; 2]>>,
-    buffer: Vec<f32>,
+    buffer: Vec<[f32; 2]>,
 }
 pub struct AudioContextInput {
     _device: cpal::Device,
@@ -82,8 +82,9 @@ impl Rack {
 
         let input = match host.default_input_device() {
             Some(in_device) => {
+                let in_channels = in_device.default_input_config().unwrap().channels();
                 let in_config = cpal::StreamConfig {
-                    channels: 1,
+                    channels: in_channels,
                     sample_rate: in_device.default_input_config().unwrap().sample_rate(),
                     buffer_size: cpal::BufferSize::Default,
                 };
@@ -91,20 +92,45 @@ impl Rack {
                 let in_buffer: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(vec![]));
                 let inbuf = in_buffer.clone();
 
-                let in_stream = in_device.build_input_stream(
-                    &in_config,
-                    move |data: &[f32], _: &cpal::InputCallbackInfo| {
-                        if let Ok(mut buf) = inbuf.lock() {
-                            buf.extend(data);
-                        } else {
-                            error!("Rack dropped audio input");
-                        }
-                    },
-                    |err| {
-                        error!("{err}");
-                    },
-                    None
-                ).unwrap();
+                let in_stream = if in_channels == 1 {
+                    in_device.build_input_stream(
+                        &in_config,
+                        move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                            if let Ok(mut buf) = inbuf.lock() {
+                                buf.extend(data);
+                            } else {
+                                error!("Rack dropped audio input");
+                            }
+                        },
+                        |err| {
+                            error!("{err}");
+                        },
+                        None
+                    ).unwrap()
+                } else if in_channels == 2 {
+                    in_device.build_input_stream(
+                        &in_config,
+                        move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                            if let Ok(mut buf) = inbuf.lock() {
+                                buf.extend(
+                                    data.iter()
+                                        .array_chunks::<2>()
+                                        .map(|[left, right]| {
+                                            (left + right) / 2.0
+                                        })
+                                );
+                            } else {
+                                error!("Rack dropped audio input");
+                            }
+                        },
+                        |err| {
+                            error!("{err}");
+                        },
+                        None
+                    ).unwrap()
+                } else {
+                    panic!("Failed to init audio input stream: unsupported number of channels");
+                };
                 in_stream.play().unwrap();
                 unsafe {
                     AUDIO_INPUT_STREAM = Some(in_stream);
@@ -124,7 +150,6 @@ impl Rack {
             output: AudioContextOutput {
                 _device: out_device,
                 config: out_config,
-                // mixer_handle: out_mixer_handle,
                 buf_stream_handle: out_buf_stream_handle,
                 buffer: vec![],
             },
@@ -171,7 +196,7 @@ impl Rack {
                                 .any(|o| o.0 == p.0)
                         })
                     {
-                        let mut mins = vec![0.0; m.inputs()];
+                        let mut mins = vec![f32::NAN; m.inputs()];
 
                         for p in inpatches {
                             match outs.iter()
@@ -203,12 +228,13 @@ impl Rack {
 
         if let Some(audio_context) = &mut self.audio_context {
             // Play generated audio
-            let ao: Vec<f32> = self.modules.iter_mut()
+            let ao: Vec<[f32; 2]> = self.modules.iter_mut()
                 .map(|m| m.1.drain_audio_buffer())
                 .fold(vec![], |mut ao, b| {
                     for (i, sample) in b.iter().enumerate() {
                         if i < ao.len() {
-                            ao[i] += sample;
+                            ao[i][0] += sample[0];
+                            ao[i][1] += sample[1];
                         } else {
                             ao.push(*sample);
                         }
@@ -224,10 +250,9 @@ impl Rack {
 
                 let reinhard = oddio::Reinhard::new(signal);
                 let fgain = oddio::FixedGain::new(reinhard, -20.0);
-                let stereo = oddio::MonoToStereo::new(fgain);
 
                 let mut samples = [[0.0; 2]; AUDIO_BUFFER_SIZE];
-                stereo.sample(1.0 / sr as f32, &mut samples);
+                fgain.sample(1.0 / sr as f32, &mut samples);
                 audio_context.output.buf_stream_handle
                     .control::<oddio::Stream<_>, _>()
                     .write(&samples);

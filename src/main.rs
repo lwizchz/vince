@@ -56,6 +56,7 @@ example.
 
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
+#![feature(iter_array_chunks)]
 
 #![deny(rust_2018_idioms)]
 #![allow(elided_lifetimes_in_paths)]

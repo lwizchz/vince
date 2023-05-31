@@ -159,11 +159,17 @@ impl Module for CompositeVideoOut {
     }
 
     fn step(&mut self, time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
-        let y = ins[0];
-        let c = ins[1];
+        let mut y = ins[0];
+        let mut c = ins[1];
 
-        if y < 0.0 {
+        if y.is_nan() && c.is_nan() {
             return vec![];
+        }
+        if y.is_nan() {
+            y = 0.0;
+        }
+        if c.is_nan() {
+            c = 0.0;
         }
 
         if self.luma.len() > Self::MAX_LEN {
