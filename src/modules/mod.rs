@@ -19,6 +19,8 @@ pub mod luma;
 
 #[cfg(feature = "files")]
 pub mod file_encoder;
+#[cfg(feature = "files")]
+pub mod file_decoder;
 
 pub mod oscilloscope;
 pub mod oscillator;

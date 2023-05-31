@@ -1,9 +1,13 @@
 /*!
-The `AudioOut` module takes an input and plays it on the primary audio device,
-after first applying a gain to it.
+The `AudioOut` module takes 2 inputs and plays them in stereo on the primary
+audio device.
 
 ## Inputs
-0. The audio signal to play (stereo is not currently supported)
+0. The left channel of the audio signal
+1. The right channel of the audio signal
+
+##### Note
+If the right channel is NAN (unpatched), then the left channel will be doubled.
 
 ## Outputs
 None

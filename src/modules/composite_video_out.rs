@@ -1,6 +1,7 @@
 /*!
-The `CompositeVideoOut` modules takes 2 inputs and displays them as Luma & Chroma
-on a [640](CompositeVideoOut::WIDTH)x[480](CompositeVideoOut::HEIGHT) screen.
+The `CompositeVideoOut` module takes 2 inputs and displays them as Luma &
+Chroma on a [640](CompositeVideoOut::WIDTH)x[480](CompositeVideoOut::HEIGHT)
+screen.
 
 ## Inputs
 0. Luma

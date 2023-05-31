@@ -20,7 +20,7 @@ None
 2. Gamma-corrected blue channel in the range [0.0, 1.0]
 
 ##### Note
-If the video buffer becomes empty, the outputs will all be -1.0
+If the video buffer becomes empty, the outputs will all be f32::NAN.
 
 ## Knobs
 None

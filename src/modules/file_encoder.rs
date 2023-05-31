@@ -1,8 +1,13 @@
 /*!
-The `FileEncoder` module takes an input and writes it to a WAV file.
+The `FileEncoder` module takes 2 inputs and writes them as stereo to a WAV
+file.
 
 ## Inputs
-0. The audio signal to write (stereo is not currently supported)
+0. The left channel of the audio signal
+1. The right channel of the audio signal
+
+##### Note
+If the right channel is NAN (unpatched), then the left channel will be doubled.
 
 ## Outputs
 None
@@ -25,7 +30,7 @@ struct FileWriter {
 impl FileWriter {
     fn new(filename: &str) -> Self {
         let spec = hound::WavSpec {
-            channels: 1,
+            channels: 2,
             sample_rate: 44100,
             bits_per_sample: 16,
             sample_format: hound::SampleFormat::Int,
@@ -89,7 +94,22 @@ impl Module for FileEncoder {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new(self.filename.clone(), ts),
+                            TextSection::new(
+                                format!(
+                                    "{}\n",
+                                    self.filename.chars()
+                                        .enumerate()
+                                        .flat_map(|(i, c)| {
+                                            if i > 0 && i % 17 == 0 {
+                                                vec![c, '\n']
+                                            } else {
+                                                vec![c]
+                                            }
+                                        }).collect::<String>()
+                                        .trim_end(),
+                                ),
+                                ts,
+                            ),
                         ]),
                         ModuleTextComponent,
                     )).id()
@@ -114,7 +134,7 @@ impl Module for FileEncoder {
     }
 
     fn inputs(&self) -> usize {
-        1
+        2
     }
     fn outputs(&self) -> usize {
         0
@@ -128,8 +148,16 @@ impl Module for FileEncoder {
             return vec![];
         }
 
+        let left = (ins[0] * i16::MAX as f32) as i16;
+        let right = if ins[1].is_nan() {
+            left
+        } else {
+            (ins[1] * i16::MAX as f32) as i16
+        };
+
         if let Some(writer) = &mut self.writer {
-            writer.writer.write_sample((ins[0] * i16::MAX as f32) as i16).unwrap();
+            writer.writer.write_sample(left).unwrap();
+            writer.writer.write_sample(right).unwrap();
         } else {
             error!("FileEncoder dropped audio output");
         }
