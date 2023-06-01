@@ -92,16 +92,12 @@ impl Module for Scaler {
     }
 
     fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
-        if self.knobs[0] >= 0.5 {
-            vec![-ins[0]]
-        } else {
-            vec![ins[0]]
-        }
+        vec![ins[0] * self.knobs[0]]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("K0 Enabled: {}\n", self.knobs[0]);
+                text.sections[1].value = format!("K0 Scale: {}\n", self.knobs[0]);
             }
         }
     }

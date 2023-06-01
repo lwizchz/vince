@@ -57,6 +57,7 @@ example.
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 #![feature(iter_array_chunks)]
+#![feature(drain_filter)]
 
 #![deny(rust_2018_idioms)]
 #![allow(elided_lifetimes_in_paths)]
@@ -254,13 +255,13 @@ fn setup_patches(mut commands: Commands, racks: Res<Assets<Rack>>, h_rack: ResMu
                     let endpos = min.get_pos(&q_child, &q_transform, &q_camera) + Vec3::new(-50.0, 0.0, 0.0);
                     let mut bottom = (startpos.y+endpos.y)/2.0;
                     bottom = bottom.min(startpos.y).min(endpos.y);
-                    let midpos = Vec3::new((startpos.x+endpos.x)/2.0, bottom - 50.0, 0.0);
+                    let midpos = Vec3::new((startpos.x+endpos.x)/2.0, bottom - 50.0 - 5.0 * i as f32, 0.0);
 
                     let points: Vec<Vec3> = vec![
                         startpos,
-                        startpos.lerp(midpos, 0.5) - Vec3::Y * 3.0,
+                        startpos.lerp(midpos, 0.5) - Vec3::Y * 10.0,
                         midpos,
-                        midpos.lerp(endpos, 0.5) - Vec3::Y * 3.0,
+                        midpos.lerp(endpos, 0.5) - Vec3::Y * 10.0,
                         endpos,
                     ].iter()
                         .map(|p| *p - startpos)

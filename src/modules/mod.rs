@@ -22,6 +22,9 @@ pub mod file_encoder;
 #[cfg(feature = "files")]
 pub mod file_decoder;
 
+#[cfg(feature = "midi")]
+pub mod midi_in;
+
 pub mod oscilloscope;
 pub mod oscillator;
 pub mod noise;
