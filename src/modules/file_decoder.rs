@@ -33,7 +33,8 @@ impl FileReader {
     fn new(filename: &str) -> Self {
         FileReader {
             filename: filename.to_string(),
-            reader: hound::WavReader::open(filename).expect(&format!("Failed to open WAV file: {}", filename)),
+            reader: hound::WavReader::open(filename)
+                .unwrap_or_else(|msg| panic!("Failed to open WAV file {}: {}", filename, msg)),
             idx: 0,
             buffer: vec![],
         }
@@ -42,13 +43,15 @@ impl FileReader {
         let sample = self.reader.samples::<i16>().next();
         match sample {
             Some(s) => {
-                let left = s.expect(&format!("Failed to read sample from WAV file: {}", self.filename)) as f32 / i16::MAX as f32;
+                let left = s
+                    .unwrap_or_else(|msg| panic!("Failed to read sample from WAV file {}: {}", self.filename, msg))
+                    as f32 / i16::MAX as f32;
                 let right = if self.reader.spec().channels == 1 {
                     left
                 } else {
-                    let emsg = format!("Failed to continue reading channel sample from WAV file: {}", self.filename);
                     self.reader.samples::<i16>().next()
-                        .expect(&emsg).expect(&emsg)
+                        .unwrap_or_else(|| panic!("Failed to continue reading channel sample from WAV file {}: unbalanced stream", self.filename))
+                        .unwrap_or_else(|msg| panic!("Failed to continue reading channel sample from WAV file {}: {}", self.filename, msg))
                         as f32 / i16::MAX as f32
                 };
 
@@ -65,7 +68,7 @@ impl FileReader {
 }
 impl std::fmt::Debug for FileReader {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}{}", "FileReader { filename: \"", self.filename, "\" }")
+        write!(f, "FileReader {{ filename: \"{}\" }}", self.filename)
     }
 }
 impl Clone for FileReader {

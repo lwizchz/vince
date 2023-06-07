@@ -37,13 +37,14 @@ impl FileWriter {
         };
         FileWriter {
             filename: filename.to_string(),
-            writer: hound::WavWriter::create(filename, spec).expect(&format!("Failed to create WAV file: {}", filename)),
+            writer: hound::WavWriter::create(filename, spec)
+                .unwrap_or_else(|msg| panic!("Failed to create WAV file {}: {}", filename, msg)),
         }
     }
 }
 impl std::fmt::Debug for FileWriter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}{}", "FileWriter { filename: \"", self.filename, "\" }")
+        write!(f, "FileWriter {{ filename: \"{}\" }}", self.filename)
     }
 }
 impl Clone for FileWriter {

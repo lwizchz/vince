@@ -6,7 +6,16 @@ device.
 None
 
 ## Outputs
-0. The main signal from the given device
+0. The frequency signal from the given device
+1. The amplitude signal from the given device
+2. Control signal 1
+3. Control signal 2
+4. Control signal 3
+5. Control signal 4
+6. Control signal 5
+7. Control signal 6
+8. Control signal 7
+9. Control signal 8
 
 ## Knobs
 None
@@ -97,10 +106,12 @@ impl Module for MidiIn {
             for (i, in_port) in midi_in.ports()
                 .iter().enumerate()
             {
-                let in_port_name = midi_in.port_name(in_port).expect(&format!("Failed to get MIDI Input name for port with index {}", i));
+                let in_port_name = midi_in.port_name(in_port)
+                    .unwrap_or_else(|msg| panic!("Failed to get MIDI Input name for port with index {}: {}", i, msg));
                 let events = self.midi_context.events.clone();
                 let conn_in = midi_in.connect(in_port, "vince-midi-in", move |_, message, _| {
-                    let event = LiveEvent::parse(message).expect(&format!("Failed to parse MIDI event: {:?}", message));
+                    let event = LiveEvent::parse(message)
+                        .unwrap_or_else(|msg| panic!("Failed to parse MIDI event: {:?}: {}", message, msg));
                     match event {
                         LiveEvent::Midi { channel, message } => {
                             if let Ok(mut events) = events.try_lock() {
@@ -109,7 +120,7 @@ impl Module for MidiIn {
                         },
                         _ => info!("Unhandled MIDI event: {:?}", event),
                     }
-                }, ()).expect(&format!("Failed to connect to MIDI port with index {}", i));
+                }, ()).unwrap_or_else(|msg| panic!("Failed to connect to MIDI port with index {}: {}", i, msg));
 
                 self.midi_context.ports_names_conns.push((
                     in_port.clone(),
@@ -121,14 +132,14 @@ impl Module for MidiIn {
                 midi_in.ignore(midir::Ignore::None);
             }
 
+            self.controllers.insert(u7::from(1), u7::from(0));
+            self.controllers.insert(u7::from(2), u7::from(0));
             self.controllers.insert(u7::from(3), u7::from(0));
             self.controllers.insert(u7::from(4), u7::from(0));
             self.controllers.insert(u7::from(5), u7::from(0));
             self.controllers.insert(u7::from(6), u7::from(0));
             self.controllers.insert(u7::from(7), u7::from(0));
             self.controllers.insert(u7::from(8), u7::from(0));
-            self.controllers.insert(u7::from(9), u7::from(0));
-            self.controllers.insert(u7::from(10), u7::from(0));
         }
     }
 
@@ -202,14 +213,14 @@ impl Module for MidiIn {
                 freq,
                 note_depth.as_int() as f32 / u7max,
 
+                self.controllers[&u7::from(1)].as_int() as f32 / u7max,
+                self.controllers[&u7::from(2)].as_int() as f32 / u7max,
                 self.controllers[&u7::from(3)].as_int() as f32 / u7max,
                 self.controllers[&u7::from(4)].as_int() as f32 / u7max,
                 self.controllers[&u7::from(5)].as_int() as f32 / u7max,
                 self.controllers[&u7::from(6)].as_int() as f32 / u7max,
                 self.controllers[&u7::from(7)].as_int() as f32 / u7max,
                 self.controllers[&u7::from(8)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(9)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(10)].as_int() as f32 / u7max,
             ];
         }
         vec![0.0; 10]

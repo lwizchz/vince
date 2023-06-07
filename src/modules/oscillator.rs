@@ -153,7 +153,7 @@ impl Module for Oscillator {
                 self.sync_count = 0;
             },
             OscillatorSync::Horizontal => { // Reset every frame
-                if self.sync_count % (ComponentVideoOut::WIDTH as usize * ComponentVideoOut::HEIGHT as usize) == 0 {
+                if self.sync_count % (ComponentVideoOut::WIDTH * ComponentVideoOut::HEIGHT) == 0 {
                     self.sync_phase = match self.func {
                         OscillatorFunc::Saw => t,
                         _ => speed * t * 2.0*PI,
@@ -162,7 +162,7 @@ impl Module for Oscillator {
                 }
             },
             OscillatorSync::Vertical => { // Reset every line
-                if self.sync_count % (ComponentVideoOut::WIDTH as usize) == 0 {
+                if self.sync_count % ComponentVideoOut::WIDTH == 0 {
                     self.sync_phase = match self.func {
                         OscillatorFunc::Saw => t,
                         _ => speed * t * 2.0*PI,

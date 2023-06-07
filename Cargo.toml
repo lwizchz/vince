@@ -1,6 +1,6 @@
 [package]
 name = "vince"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Louise Montalvo <louanmontalvo@gmail.com>"]
 license = "MIT"
@@ -17,7 +17,7 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-bevy = { version = "0.10.1", features = ["dynamic_linking"] }
+bevy = { version = "0.10.1" }
 bevy_common_assets = { version = "0.6.0", features = ["toml"] }
 bevy_framepace = "0.12.1"
 cpal = "0.15.2"
