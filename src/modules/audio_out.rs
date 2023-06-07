@@ -13,7 +13,7 @@ If the right channel is NAN (unpatched), then the left channel will be doubled.
 None
 
 ## Knobs
-0. Gain in the range [0.0, 1.0]
+0. Gain in the range [0.0, inf)
 
 */
 

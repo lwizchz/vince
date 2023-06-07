@@ -33,6 +33,8 @@ pub mod scaler;
 pub mod multiplier;
 pub mod mixer;
 
+pub mod equalizer;
+
 #[typetag::deserialize(tag = "type")]
 pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     fn init(&mut self, id: usize, ec: EntityCommands, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle);

@@ -66,6 +66,7 @@ pub struct Oscillator {
     #[serde(skip)]
     children: Vec<Entity>,
 
+    func: OscillatorFunc,
     #[serde(default)]
     sync: OscillatorSync,
     #[serde(skip)]
@@ -73,7 +74,6 @@ pub struct Oscillator {
     #[serde(skip)]
     sync_count: usize,
 
-    func: OscillatorFunc,
     knobs: [f32; 4],
 }
 #[typetag::deserialize]
@@ -146,7 +146,6 @@ impl Module for Oscillator {
         let speed = f64::from(self.knobs[1]);
         let depth = f64::from(self.knobs[2]);
 
-        // FIXME video sync
         match self.sync {
             OscillatorSync::None => {
                 self.sync_phase = 0.0;

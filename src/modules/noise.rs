@@ -15,7 +15,7 @@ None
 0. The noise signal in the range [-K0, K0] where K0 is knob 0
 
 ## Knobs
-0. Gain in the range [0.0, 1.0]
+0. Gain in the range [0.0, inf)
 
 */
 

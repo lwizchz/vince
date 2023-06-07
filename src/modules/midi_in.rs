@@ -213,14 +213,30 @@ impl Module for MidiIn {
                 freq,
                 note_depth.as_int() as f32 / u7max,
 
-                self.controllers[&u7::from(1)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(2)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(3)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(4)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(5)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(6)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(7)].as_int() as f32 / u7max,
-                self.controllers[&u7::from(8)].as_int() as f32 / u7max,
+                self.controllers.get(&u7::from(1))
+                    .unwrap_or(&u7::from(0))
+                    .as_int() as f32 / u7max,
+                self.controllers.get(&u7::from(2))
+                    .unwrap_or(&u7::from(0))
+                    .as_int() as f32 / u7max,
+                self.controllers.get(&u7::from(3))
+                    .unwrap_or(&u7::from(0))
+                    .as_int() as f32 / u7max,
+                self.controllers.get(&u7::from(4))
+                    .unwrap_or(&u7::from(0))
+                    .as_int() as f32 / u7max,
+                self.controllers.get(&u7::from(5))
+                    .unwrap_or(&u7::from(0))
+                    .as_int() as f32 / u7max,
+                self.controllers.get(&u7::from(6))
+                    .unwrap_or(&u7::from(0))
+                    .as_int() as f32 / u7max,
+                self.controllers.get(&u7::from(7))
+                    .unwrap_or(&u7::from(0))
+                    .as_int() as f32 / u7max,
+                self.controllers.get(&u7::from(8))
+                    .unwrap_or(&u7::from(0))
+                    .as_int() as f32 / u7max,
             ];
         }
         vec![0.0; 10]

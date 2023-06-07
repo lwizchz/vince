@@ -13,7 +13,7 @@ None
 If the right channel is missing, then the left channel will be doubled.
 
 ## Knobs
-0. Gain in the range [0.0, 1.0]
+0. Gain in the range [0.0, inf)
 
 */
 
@@ -63,7 +63,11 @@ impl FileReader {
                 self.idx %= self.buffer.len();
             }
         }
-        self.buffer[self.idx-1]
+        if self.idx > 0 {
+            self.buffer[self.idx-1]
+        } else {
+            self.buffer[self.buffer.len() - 1]
+        }
     }
 }
 impl std::fmt::Debug for FileReader {

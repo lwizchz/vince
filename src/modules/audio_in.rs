@@ -9,7 +9,7 @@ None
 0. The audio signal from the primary audio device
 
 ## Knobs
-0. Gain in the range [0.0, 1.0]
+0. Gain in the range [0.0, inf)
 
 */
 
