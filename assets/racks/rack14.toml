@@ -1,0 +1,15 @@
+[modules]
+0M = { type = "ComponentVideoOut" }
+
+1M = { type = "VideoIn", source = "Camera" }
+
+[patches]
+1M0O = [
+    "0M0I",
+]
+1M1O = [
+    "0M1I",
+]
+1M2O = [
+    "0M2I",
+]

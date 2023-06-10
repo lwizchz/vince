@@ -2,14 +2,15 @@
 The `VideoIn` module outputs 3 signals as RGB data from a given video source.
 
 ## Video Sources
- * `Screen` - Output video from a region on the screen (currently hard-coded as
+ * `Screen` - Output video from a region on the screen. Currently hard-coded as:
    {
        x: 0,
        y: 0,
        w: [640](ComponentVideoOut::WIDTH),
        h: [480](ComponentVideoOut::HEIGHT)
     }
- * <strike>`Camera` - Output video from a webcam</strike> Not yet supported
+ * `Camera` - Output video from a region of a webcam. Currently the same as
+   above.
 
 ## Inputs
 None
@@ -32,7 +33,9 @@ use std::{sync::{Arc, Mutex}, collections::VecDeque};
 use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
+
 use screenshots::Screen;
+use nokhwa::Camera;
 
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, component_video_out::ComponentVideoOut}};
 
@@ -46,16 +49,26 @@ impl std::fmt::Debug for ScreenSource {
         write!(f, "ScreenSource")
     }
 }
+#[derive(Clone)]
+struct CameraSource {
+    camera: Arc<Mutex<Camera>>,
+    images: Arc<Mutex<Vec<image::ImageBuffer<<nokhwa::pixel_format::RgbFormat as nokhwa::FormatDecoder>::Output, Vec<u8>>>>>,
+}
+impl std::fmt::Debug for CameraSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "CameraSource")
+    }
+}
 #[derive(Deserialize, Debug, Clone)]
 enum VideoSource {
     Screen(
         #[serde(skip)]
         Option<ScreenSource>,
     ),
-    // Camera(
-    //     #[serde(skip)]
-    //     Option<CameraSource>,
-    // ),
+    Camera(
+        #[serde(skip)]
+        Option<CameraSource>,
+    ),
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -88,6 +101,7 @@ impl VideoIn {
                         images: Arc::new(Mutex::new(vec![])),
                     });
                 }
+
                 if let Some(screen) = screen {
                     let screen = screen.clone();
                     let images = screen.images.clone();
@@ -97,6 +111,44 @@ impl VideoIn {
                             .expect("Failed to capture screen for video input");
                         if let Ok(mut images) = images.lock() {
                             images.push(image);
+                        }
+                    });
+                }
+            },
+            VideoSource::Camera(camera) => {
+                if camera.is_none() {
+                    nokhwa::nokhwa_initialize(|granted| {
+                        if !granted {
+                            panic!("Failed to acquire camera permissions for video input");
+                        }
+                    });
+
+                    let mut cam = Camera::new(
+                        nokhwa::utils::CameraIndex::Index(0),
+                        nokhwa::utils::RequestedFormat::new::<nokhwa::pixel_format::RgbFormat>(
+                            nokhwa::utils::RequestedFormatType::AbsoluteHighestFrameRate,
+                        ),
+                    ).expect("Failed to get camera for video input");
+                    cam.open_stream().expect("Failed to open camera stream for video input");
+                    *camera = Some(CameraSource {
+                        camera: Arc::new(Mutex::new(cam)),
+                        images: Arc::new(Mutex::new(vec![])),
+                    });
+                }
+
+                if let Some(camera) = camera {
+                    let images = camera.images.clone();
+                    let camera = camera.camera.clone();
+                    std::thread::spawn(move || {
+                        if let Ok(mut camera) = camera.lock() {
+                            let image = camera.frame()
+                                .expect("Failed to capture camera frame for video input");
+                            if let Ok(mut images) = images.lock() {
+                                images.push(
+                                    image.decode_image::<nokhwa::pixel_format::RgbFormat>()
+                                        .expect("Failed to decode image from camera for video input")
+                                );
+                            }
                         }
                     });
                 }
@@ -171,6 +223,26 @@ impl Module for VideoIn {
                         for image in images.drain(..) {
                             if self.video_buffer.is_empty() {
                                 self.video_buffer.extend(image.bgra());
+                            }
+                        }
+                    }
+                }
+            },
+            VideoSource::Camera(camera) => {
+                if let Some(camera) = camera {
+                    if let Ok(mut images) = camera.images.try_lock() {
+                        for image in images.drain(..) {
+                            if self.video_buffer.is_empty() {
+                                self.video_buffer.extend(
+                                    image.enumerate_pixels()
+                                        .filter_map(|(x, y, p)| {
+                                            if x < ComponentVideoOut::WIDTH as u32 && y < ComponentVideoOut::HEIGHT as u32 {
+                                                Some([p.0[2], p.0[1], p.0[0], 255])
+                                            } else {
+                                                None
+                                            }
+                                        }).flatten()
+                                );
                             }
                         }
                     }
