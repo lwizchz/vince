@@ -41,9 +41,11 @@ pub struct ComponentVideoOut {
     rgb: VecDeque<(f64, [f32; 3])>,
 }
 impl ComponentVideoOut {
-    pub const WIDTH: usize = 640;
-    pub const HEIGHT: usize = 480;
-    const MAX_LEN: usize = 2048;
+    // pub const WIDTH: usize = 640;
+    // pub const HEIGHT: usize = 480;
+    pub const WIDTH: usize = 80;
+    pub const HEIGHT: usize = 60;
+    const MAX_LEN: usize = 4096;
 }
 #[typetag::deserialize]
 impl Module for ComponentVideoOut {
@@ -105,8 +107,8 @@ impl Module for ComponentVideoOut {
                                 position_type: PositionType::Relative,
                                 position: UiRect::top(Val::Px(10.0)),
                                 size: Size::new(
-                                    Val::Px(f32::from(Self::WIDTH as u16)),
-                                    Val::Px(f32::from(Self::HEIGHT as u16)),
+                                    Val::Px(f32::from(640u16)),
+                                    Val::Px(f32::from(480u16)),
                                 ),
                                 ..default()
                             },

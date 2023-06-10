@@ -43,9 +43,11 @@ pub struct CompositeVideoOut {
     chroma: VecDeque<(f64, f32)>,
 }
 impl CompositeVideoOut {
-    pub const WIDTH: usize = 640;
-    pub const HEIGHT: usize = 480;
-    const MAX_LEN: usize = 2048;
+    // pub const WIDTH: usize = 640;
+    // pub const HEIGHT: usize = 480;
+    pub const WIDTH: usize = 80;
+    pub const HEIGHT: usize = 60;
+    const MAX_LEN: usize = 4096;
 }
 #[typetag::deserialize]
 impl Module for CompositeVideoOut {
@@ -107,8 +109,8 @@ impl Module for CompositeVideoOut {
                                 position_type: PositionType::Relative,
                                 position: UiRect::top(Val::Px(10.0)),
                                 size: Size::new(
-                                    Val::Px(f32::from(Self::WIDTH as u16)),
-                                    Val::Px(f32::from(Self::HEIGHT as u16)),
+                                    Val::Px(f32::from(640 as u16)),
+                                    Val::Px(f32::from(480 as u16)),
                                 ),
                                 ..default()
                             },

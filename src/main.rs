@@ -114,7 +114,7 @@ fn main() {
         .add_system(setup_patches.run_if(in_state(AppState::Loaded)))
         .add_system(rack_reloader.run_if(in_state(AppState::Ready)))
         .add_system(rack_stepper.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
-        .add_system(rack_render.run_if(in_state(AppState::Ready)))
+        .add_system(rack_render.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(rack_keyboard_input.run_if(in_state(AppState::Ready)))
         .run();
 }
@@ -341,11 +341,21 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut
         if let Some(audio_context) = &rack.audio_context {
             let sr = audio_context.output.config.sample_rate.0 as u64;
             let audio_steps = sr / u64::from(FRAME_RATE);
-            let adt = Duration::from_micros(1000 * 1000 / sr).as_secs_f64();
+            // let adt = Duration::from_micros(1000 * 1000 / sr).as_secs_f64();
 
-            continuous_step(&time, adt, rack, StepType::Key);
+            let video_steps = 4;
+            let vdt = Duration::from_nanos(1000 * 1000 * 1000 / sr / video_steps).as_secs_f64();
+
+            let mut start_step = 2;
+            continuous_step(&time, vdt, rack, StepType::Key);
             for _ in 1..audio_steps {
-                continuous_step(&time, adt, rack, StepType::Audio);
+                continuous_step(&time, vdt, rack, StepType::Audio);
+                for _ in start_step..video_steps {
+                    continuous_step(&time, vdt, rack, StepType::Video);
+                }
+                if start_step == 2 {
+                    start_step = 1;
+                }
             }
         } else {
             rack.init_audio();

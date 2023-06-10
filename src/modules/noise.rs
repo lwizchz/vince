@@ -107,11 +107,7 @@ impl Module for Noise {
         1
     }
 
-    fn step(&mut self, time: f64, st: StepType, _ins: &[f32]) -> Vec<f32> {
-        if st == StepType::Video {
-            return vec![0.0];
-        }
-
+    fn step(&mut self, time: f64, _st: StepType, _ins: &[f32]) -> Vec<f32> {
         match self.func {
             NoiseFunc::White => vec![thread_rng().gen_range(-1.0..=1.0) * self.knobs[0]],
             // NoiseFunc::Fractional(_p) => {
