@@ -4,7 +4,7 @@ The `Noise` module outputs a noise signal with a given gain.
 ## Noise Functions
  * `White` - random data from the [rand] crate
  * <strike>`Fractional(f32)` - white noise with a fractional frequency spectrum
-   </strike> Not yet supported, try using an [Equalizer](crate::modules::equalizer)
+   </strike> Not yet supported, try using an [Equalizer](crate::modules::audio::equalizer)
  * `Perlin` - smoothed 1-dimensional Perlin noise
  * `Simplex` - smoothed 1-dimensional Simplex noise
 

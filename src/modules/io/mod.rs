@@ -1,3 +1,9 @@
+/*!
+The following I/O modules are defined here: `AudioOut`, `AudioIn`,
+`CompositeVideoOut`, `ComponentVideoOut`, `VideoIn`, `FileEncoder`,
+`FileDecoder`, `MidiIn`
+*/
+
 pub mod audio_out;
 pub mod audio_in;
 

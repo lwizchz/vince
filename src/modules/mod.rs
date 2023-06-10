@@ -21,7 +21,7 @@ pub mod mixer;
 
 pub mod audio;
 
-pub mod luma;
+pub mod video;
 
 #[typetag::deserialize(tag = "type")]
 pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
