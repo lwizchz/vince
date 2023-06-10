@@ -1,0 +1,27 @@
+[modules]
+0M = { type = "AudioOut", knobs = [1.0] }
+
+1M = { type = "FileDecoder", filename = "assets/sounds/mono_test.wav", knobs = [1.0] }
+
+2M = { type = "Fuzz", knobs = [20.0, 1.0, 1.0] }
+3M = { type = "Oscilloscope" }
+
+4M = { type = "Limiter", knobs = [0.01, -0.01] }
+5M = { type = "Envelope" }
+6M = { type = "Oscilloscope" }
+
+[patches]
+1M0O = [
+    "2M0I",
+]
+2M0O = [
+    "3M0I",
+    "4M0I",
+]
+4M0O = [
+    "0M0I",
+    "5M0I",
+]
+5M0O = [
+    "6M0I",
+]

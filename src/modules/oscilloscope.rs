@@ -52,6 +52,10 @@ impl Oscilloscope {
     fn gen_points(&mut self) -> Vec<Vec3> {
         match self.vals.front() {
             Some((t0, _)) => {
+                if self.max_val > 0.0 {
+                    self.max_val /= 1.05;
+                }
+
                 let (mut max_t, mut max_val) = self.vals.iter()
                     .fold((0.0f64, 0.0f32), |mut a, (t, v)| {
                         if *t > a.0 {
@@ -70,6 +74,7 @@ impl Oscilloscope {
                 }
                 self.max_t = max_t;
                 self.max_val = max_val;
+
                 self.vals.iter()
                     .map(|(t, v)| Vec3 {
                         x: ((t - t0) * f64::from(Self::WIDTH as u16) / (max_t - t0)) as f32,
@@ -165,7 +170,8 @@ impl Module for Oscilloscope {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("LEVEL".to_string(), ts),
+                            TextSection::new("Level\n".to_string(), ts.clone()),
+                            TextSection::new("Max\n".to_string(), ts),
                         ]),
                         ModuleTextComponent,
                     )).id()
@@ -237,7 +243,8 @@ impl Module for Oscilloscope {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
                 let val = self.vals.back().unwrap_or(&(0.0, 0.0));
-                text.sections[1].value = format!("{}", val.1);
+                text.sections[1].value = format!("Level: {:+}\n", val.1);
+                text.sections[2].value = format!("Max: {}\n", self.max_val);
             }
         }
 

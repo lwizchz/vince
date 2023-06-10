@@ -19,10 +19,7 @@ pub mod scaler;
 pub mod multiplier;
 pub mod mixer;
 
-pub mod compressor;
-pub mod equalizer;
-pub mod delay;
-pub mod panner;
+pub mod audio;
 
 pub mod luma;
 
