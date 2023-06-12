@@ -8,6 +8,9 @@ None
 ## Outputs
 0. The audio signal from the primary audio device
 
+##### Note
+If the audio buffer becomes empty, the output will be f32::NAN.
+
 ## Knobs
 0. Gain in the range [0.0, inf)
 
@@ -101,11 +104,11 @@ impl Module for AudioIn {
 
     fn step(&mut self, _time: f64, st: StepType, _ins: &[f32]) -> Vec<f32> {
         if st == StepType::Video {
-            return vec![0.0];
+            return vec![f32::NAN];
         }
 
         if self.audio_buffer.is_empty() {
-            vec![0.0]
+            vec![f32::NAN]
         } else {
             vec![self.audio_buffer.remove(0) * self.knobs[0]]
         }

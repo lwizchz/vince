@@ -6,8 +6,8 @@ The `VideoIn` module outputs 3 signals as RGB data from a given video source.
    {
        x: 0,
        y: 0,
-       w: [640](ComponentVideoOut::WIDTH),
-       h: [480](ComponentVideoOut::HEIGHT)
+       w: [80](ComponentVideoOut::WIDTH),
+       h: [60](ComponentVideoOut::HEIGHT)
     }
  * `Camera` - Output video from a region of a webcam. Currently the same as
    above.

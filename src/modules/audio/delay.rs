@@ -101,6 +101,11 @@ impl Module for Delay {
     }
 
     fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
+        let x = ins[0];
+        if x.is_nan() {
+            return vec![f32::NAN];
+        }
+
         let delay = self.knobs[0];
         let feedback = self.knobs[1];
         let dwmix = self.knobs[2];
@@ -116,7 +121,7 @@ impl Module for Delay {
         let delayed = if buflen > 0 {
             self.delay_idx %= buflen;
             let delayed = self.buffer[self.delay_idx];
-            self.buffer[self.delay_idx] = feedback * (ins[0] + delayed);
+            self.buffer[self.delay_idx] = feedback * (x + delayed);
             delayed
         } else {
             0.0
@@ -125,7 +130,7 @@ impl Module for Delay {
         self.delay_idx += 1;
 
         vec![
-            ins[0] * (1.0 - dwmix)
+            x * (1.0 - dwmix)
             + delayed * dwmix
         ]
     }

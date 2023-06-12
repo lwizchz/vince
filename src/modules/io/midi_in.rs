@@ -17,6 +17,9 @@ None
 8. Control signal 7
 9. Control signal 8
 
+##### Note
+If the MIDI port becomes stalled, the outputs will all be f32::NAN.
+
 ## Knobs
 None
 
@@ -162,7 +165,7 @@ impl Module for MidiIn {
 
     fn step(&mut self, _time: f64, st: StepType, _ins: &[f32]) -> Vec<f32> {
         if st == StepType::Video {
-            return vec![0.0; 10];
+            return vec![f32::NAN; 10];
         }
 
         if let Ok(mut events) = self.midi_context.events.try_lock() {
@@ -209,7 +212,7 @@ impl Module for MidiIn {
             };
 
             let u7max: f32 = u7::max_value().as_int() as f32;
-            return vec![
+            vec![
                 freq,
                 note_depth.as_int() as f32 / u7max,
 
@@ -237,8 +240,9 @@ impl Module for MidiIn {
                 self.controllers.get(&u7::from(8))
                     .unwrap_or(&u7::from(0))
                     .as_int() as f32 / u7max,
-            ];
+            ]
+        } else {
+            vec![f32::NAN; 10]
         }
-        vec![0.0; 10]
     }
 }

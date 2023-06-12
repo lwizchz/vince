@@ -109,6 +109,9 @@ impl Module for Equalizer {
 
     fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
         let x = ins[0];
+        if x.is_nan() {
+            return vec![f32::NAN];
+        }
 
         let f_0 = self.knobs[0];
         let q = self.knobs[1];

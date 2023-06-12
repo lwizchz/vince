@@ -1,6 +1,7 @@
 /*!
 The `ComponentVideoOut` module takes 3 inputs and displays them as RGB data on a
-[640](ComponentVideoOut::WIDTH)x[480](ComponentVideoOut::HEIGHT) screen.
+[80](ComponentVideoOut::WIDTH)x[60](ComponentVideoOut::HEIGHT) screen which is
+upscaled to 640x480.
 
 ## Inputs
 0. Red channel
@@ -41,8 +42,6 @@ pub struct ComponentVideoOut {
     rgb: VecDeque<(f64, [f32; 3])>,
 }
 impl ComponentVideoOut {
-    // pub const WIDTH: usize = 640;
-    // pub const HEIGHT: usize = 480;
     pub const WIDTH: usize = 80;
     pub const HEIGHT: usize = 60;
     const MAX_LEN: usize = 4096;

@@ -205,7 +205,11 @@ impl Rack {
                                 Some(o) => {
                                     match p.1.iok {
                                         ModuleIOK::Input(i) => mins[i] = *o.1,
-                                        ModuleIOK::Knob(i) => m.set_knob(i, *o.1),
+                                        ModuleIOK::Knob(i) => {
+                                            if !o.1.is_nan() {
+                                                m.set_knob(i, *o.1)
+                                            }
+                                        },
                                         _ => unreachable!(),
                                     }
                                 },
@@ -284,7 +288,11 @@ impl Rack {
             for p in inpatches {
                 if let Some(o) = outs.iter().find(|o| o.0 == p.0) {
                     match p.1.iok {
-                        ModuleIOK::Knob(i) => m.set_knob(i, *o.1),
+                        ModuleIOK::Knob(i) => {
+                            if !o.1.is_nan() {
+                                m.set_knob(i, *o.1)
+                            }
+                        },
                         ModuleIOK::Input(_) => {}, // TODO apply feedback patches to inputs?
                         _ => unreachable!(),
                     }

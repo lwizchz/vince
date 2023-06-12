@@ -1,7 +1,7 @@
 /*!
 The `CompositeVideoOut` module takes 2 inputs and displays them as Luma &
-Chroma on a [640](CompositeVideoOut::WIDTH)x[480](CompositeVideoOut::HEIGHT)
-screen.
+Chroma on a [80](CompositeVideoOut::WIDTH)x[60](CompositeVideoOut::HEIGHT)
+screen which is upscaled to 640x480.
 
 ## Inputs
 0. Luma
@@ -43,8 +43,6 @@ pub struct CompositeVideoOut {
     chroma: VecDeque<(f64, f32)>,
 }
 impl CompositeVideoOut {
-    // pub const WIDTH: usize = 640;
-    // pub const HEIGHT: usize = 480;
     pub const WIDTH: usize = 80;
     pub const HEIGHT: usize = 60;
     const MAX_LEN: usize = 4096;

@@ -12,6 +12,9 @@ None
 ##### Note
 If the right channel is missing, then the left channel will be doubled.
 
+##### Note
+If the audio buffer becomes empty, the outputs will both be f32::NAN.
+
 ## Knobs
 0. Gain in the range [0.0, inf)
 
@@ -171,7 +174,7 @@ impl Module for FileDecoder {
 
     fn step(&mut self, _time: f64, st: StepType, _ins: &[f32]) -> Vec<f32> {
         if st == StepType::Video {
-            return vec![];
+            return vec![f32::NAN, f32::NAN];
         }
 
         if let Some(reader) = &mut self.reader {
@@ -181,7 +184,7 @@ impl Module for FileDecoder {
                 sample[1] * self.knobs[0],
             ]
         } else {
-            vec![]
+            vec![f32::NAN, f32::NAN]
         }
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
