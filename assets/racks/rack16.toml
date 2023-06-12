@@ -1,0 +1,33 @@
+[modules]
+0M = { type = "AudioOut", knobs = [1.0] }
+1M = { type = "ComponentVideoOut" }
+
+2M = { type = "FileDecoder", filename = "assets/sounds/mono_test.wav", knobs = [1.0] }
+3M = { type = "Envelope" }
+4M = { type = "Scaler", knobs = [20000.0] }
+
+5M = { type = "Oscillator", func = "Saw", sync = "Vertical", knobs = [0.0, 100.0, 0.75, 0.0]}
+6M = { type = "Oscillator", func = "Sine", knobs = [0.75, 2000000.0, 0.25, 0.0]}
+7M = { type = "Oscillator", func = "Triangle", knobs = [9000.0, 1.0, 200.0, 0.0] }
+
+[patches]
+2M0O = [
+    "0M0I",
+    "3M0I",
+]
+3M0O = [
+    "4M0I",
+]
+4M0O = [
+    "7M2K",
+]
+5M0O = [
+    "1M1I",
+]
+6M0O = [
+    "1M0I",
+    "5M2K",
+]
+7M0O = [
+    "5M1K",
+]
