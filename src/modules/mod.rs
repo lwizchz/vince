@@ -14,10 +14,13 @@ use io::*;
 pub mod oscilloscope;
 pub mod oscillator;
 pub mod noise;
+pub mod sequencer;
+pub mod envelope_generator;
 
 pub mod scaler;
 pub mod multiplier;
 pub mod mixer;
+pub mod inverter;
 
 pub mod audio;
 

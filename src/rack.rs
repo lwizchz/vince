@@ -199,21 +199,16 @@ impl Rack {
                         let mut mins = vec![f32::NAN; m.inputs()];
 
                         for p in inpatches {
-                            match outs.iter()
-                                .find(|o| o.0 == p.0)
-                            {
-                                Some(o) => {
-                                    match p.1.iok {
-                                        ModuleIOK::Input(i) => mins[i] = *o.1,
-                                        ModuleIOK::Knob(i) => {
-                                            if !o.1.is_nan() {
-                                                m.set_knob(i, *o.1)
-                                            }
-                                        },
-                                        _ => unreachable!(),
-                                    }
-                                },
-                                None => unreachable!(),
+                            if let Some(o) = outs.iter().find(|o| o.0 == p.0) {
+                                match p.1.iok {
+                                    ModuleIOK::Input(i) => mins[i] = *o.1,
+                                    ModuleIOK::Knob(i) => {
+                                        if !o.1.is_nan() {
+                                            m.set_knob(i, *o.1)
+                                        }
+                                    },
+                                    _ => error!("Can't patch an output to another output"),
+                                }
                             }
                         }
 
@@ -294,7 +289,7 @@ impl Rack {
                             }
                         },
                         ModuleIOK::Input(_) => {}, // TODO apply feedback patches to inputs?
-                        _ => unreachable!(),
+                        _ => error!("Can't feedback patch an output to another output"),
                     }
                 }
             }
