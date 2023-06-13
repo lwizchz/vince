@@ -27,6 +27,7 @@ pub mod envelope_generator;
 pub mod scaler;
 pub mod multiplier;
 pub mod mixer;
+pub mod multi_mixer;
 pub mod inverter;
 
 pub mod audio;

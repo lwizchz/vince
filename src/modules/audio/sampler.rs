@@ -44,17 +44,27 @@ pub struct Sampler {
     #[serde(skip)]
     children: Vec<Entity>,
 
-    samples: Vec<(String, Vec<(f32, f32)>)>,
+    pub(crate) samples: Vec<(String, Vec<(f32, f32)>)>,
     #[serde(skip)]
     sample_readers: Vec<FileReader>,
     #[serde(skip)]
     active_samples: HashMap<usize, f32>,
     #[serde(skip)]
-    time: f64,
+    pub(crate) time: f64,
     #[serde(skip)]
-    last_time: Option<f64>,
+    pub(crate) last_time: Option<f64>,
 
     knobs: [f32; 2],
+}
+impl Sampler {
+    pub(crate) fn init_readers(&mut self) {
+        self.sample_readers = self.samples.iter()
+            .map(|(filename, _)| {
+                let mut reader = FileReader::new(filename);
+                reader.rewind();
+                reader
+            }).collect();
+    }
 }
 #[typetag::deserialize]
 impl Module for Sampler {
@@ -100,12 +110,7 @@ impl Module for Sampler {
             self.component = Some(component.id());
         });
 
-        self.sample_readers = self.samples.iter()
-            .map(|(filename, _)| {
-                let mut reader = FileReader::new(filename);
-                reader.rewind();
-                reader
-            }).collect();
+        self.init_readers();
     }
 
     fn id(&self) -> Option<usize> {
