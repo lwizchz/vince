@@ -1,5 +1,9 @@
 /*!
 All synth modules are defined here.
+
+Most modules can be used in either an audio or video setup but some have
+specific applications. See the `audio`, `io`, and `video` submodules for the
+complete list of synth modules.
 */
 
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};

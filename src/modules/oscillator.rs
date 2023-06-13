@@ -22,7 +22,7 @@ None
 ## Knobs
 0. Shift in the range (-inf, inf), affects the signal vertically
 1. Speed in the range (-inf, inf), equivalent to the period
-2. Depth in the range [0.0, inf), equivalent to twice the gain
+2. Depth in the range [0.0, inf), equivalent to the gain
 3. Phase in the range (-inf, inf), affects the signal horizontally
 
 */

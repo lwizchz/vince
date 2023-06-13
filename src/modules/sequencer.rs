@@ -2,12 +2,20 @@
 The `Sequencer` module outputs notes from the given sequence at the given
 tempo, looping when done.
 
+## Notes
+Each note is represented by a subarray whose elements are the note's frequency,
+volume, and duration. The duration is in terms of quarter notes where 1.0
+represents the length of a single quarter note.
+
+You may wish to keep a table of note frequencies on hand to make creating
+sequences easier.
+
 ## Inputs
 None
 
 ## Outputs
 0. The note's frequency
-1. The note's level
+1. The note's volume
 2. The note's press/sustain/release according to the below table:
    * If just triggered this frame: 1.0
    * If just released this frame: -1.0
