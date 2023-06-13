@@ -1,7 +1,6 @@
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use bevy::{prelude::*, sprite::Mesh2dHandle};
+use bevy::{prelude::*, utils::HashMap, sprite::Mesh2dHandle};
 use bevy::reflect::TypeUuid;
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
@@ -46,6 +45,9 @@ impl std::fmt::Debug for AudioContext {
 pub struct Rack {
     #[serde(skip)]
     pub(crate) audio_context: Option<AudioContext>,
+
+    #[serde(default)]
+    pub info: HashMap<String, String>,
 
     pub modules: HashMap<ModuleKey, Box<dyn Module>>,
     pub patches: Patches,

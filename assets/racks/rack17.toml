@@ -1,9 +1,14 @@
+[info]
+name = "Nevermind"
+author = "Louise Montalvo <louanmontalvo@gmail.com>"
+
 [modules]
 0M = { type = "AudioOut", knobs = [1.0] }
 
 1M = { type = "Sequencer", notes = [
         [329.63, 1.0, 2.0],
         [415.30, 1.0, 2.0],
+
         [622.25, 1.0, 2.0],
         [659.26, 1.0, 2.0],
 
@@ -15,6 +20,7 @@
         [440.00, 1.0, 0.5],
         [440.00, 1.0, 0.5],
         [440.00, 1.0, 0.5],
+
         [440.00, 1.0, 0.5],
         [440.00, 1.0, 0.5],
         [440.00, 1.0, 0.5],
@@ -31,7 +37,7 @@
 5M = { type = "EnvelopeGenerator", knobs = [0.2, 0.1, 0.5, 1.0] }
 6M = { type = "Oscilloscope" }
 
-7M = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
+7M = { type = "Oscillator", func = "Saw", knobs = [0.0, 440.0, 1.0, 0.0] }
 8M = { type = "Oscilloscope" }
 
 [patches]

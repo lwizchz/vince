@@ -38,7 +38,7 @@ pub struct Sequencer {
 
     notes: Vec<(f32, f32, f32)>,
     #[serde(skip)]
-    last_note: usize,
+    last_note: Option<usize>,
     #[serde(skip)]
     time: f64,
     #[serde(skip)]
@@ -107,6 +107,9 @@ impl Module for Sequencer {
 
     fn step(&mut self, time: f64, _st: StepType, _ins: &[f32]) -> Vec<f32> {
         let tempo = self.knobs[0];
+        if tempo == 0.0 {
+            return vec![f32::NAN, f32::NAN, f32::NAN];
+        }
 
         let length: f32 = self.notes.iter()
             .map(|n| n.2)
@@ -123,14 +126,18 @@ impl Module for Sequencer {
         {
             time_left -= n.2 as f64 * 60.0 / tempo as f64;
             if time_left < 0.0 {
-                if self.last_note == i {
-                    note = Some((n.0, n.1, 0.0));
-                } else if n.1 == 0.0 {
-                    note = Some((n.0, n.1, -1.0));
-                } else {
-                    note = Some((n.0, n.1, 1.0));
-                }
-                self.last_note = i;
+                note = match self.last_note {
+                    Some(last_note) if last_note == i => {
+                        Some((n.0, n.1, 0.0))
+                    },
+                    _ if n.1 == 0.0 => {
+                        Some((n.0, n.1, -1.0))
+                    },
+                    _ => {
+                        Some((n.0, n.1, 1.0))
+                    },
+                };
+                self.last_note = Some(i);
                 break;
             }
         }

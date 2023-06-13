@@ -71,7 +71,7 @@ example.
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
-use std::time::Duration;
+use std::{time::Duration, cmp::Ordering};
 use std::env;
 
 use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode}, render::{render_resource::PrimitiveTopology}};
@@ -148,8 +148,29 @@ fn load_rack(mut commands: Commands, asset_server: Res<AssetServer>, mut setting
         window.title = format!("Vince Audio-Video Synth - {rack_path}");
     }
 }
-fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>, mut state: ResMut<NextState<AppState>>, mut exit: EventWriter<AppExit>) {
+fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>, mut state: ResMut<NextState<AppState>>, mut q_window: Query<&mut Window, With<PrimaryWindow>>, mut exit: EventWriter<AppExit>) {
     if let Some(rack) = racks.get_mut(&h_rack.0) {
+        // Init rack info
+        if let Some(name) = rack.info.get("name") {
+            let rack_path = if let Some(rack_path) = env::args().nth(1) {
+                rack_path
+            } else {
+                "racks/rack0.toml".to_string()
+            };
+            if let Ok(mut window) = q_window.get_single_mut() {
+                window.title = format!("Vince Audio-Video Synth - {name} - {rack_path}");
+            }
+        }
+        if !rack.info.is_empty() {
+            rack.modules.insert(
+                ModuleKey {
+                    id: usize::MAX,
+                    iok: ModuleIOK::None,
+                },
+                Box::new(modules::info::Info::new(rack.info.clone())),
+            );
+        }
+
         // Main camera
         commands.spawn((
             Camera2dBundle::default(),
@@ -175,7 +196,15 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
         );
         component.with_children(|parent| {
             let mut sorted_modules = rack.modules.iter_mut().collect::<Vec<(&ModuleKey, &mut Box<dyn Module>)>>();
-            sorted_modules.sort_by_key(|m| m.0);
+            sorted_modules.sort_by(|a, b| {
+                if a.0.id == usize::MAX {
+                    Ordering::Less
+                } else if b.0.id == usize::MAX {
+                    Ordering::Greater
+                } else {
+                    a.0.cmp(b.0)
+                }
+            });
             for m in sorted_modules {
                 let id = m.0.id;
                 m.1.init(

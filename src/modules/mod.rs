@@ -11,6 +11,8 @@ use crate::{StepType, MainCameraComponent};
 pub mod io;
 use io::*;
 
+pub mod info;
+
 pub mod oscilloscope;
 pub mod oscillator;
 pub mod noise;

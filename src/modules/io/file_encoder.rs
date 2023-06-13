@@ -95,23 +95,15 @@ impl Module for FileEncoder {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new(
-                                format!(
-                                    "{}\n",
-                                    self.filename.chars()
-                                        .enumerate()
-                                        .flat_map(|(i, c)| {
-                                            if i > 0 && i % 17 == 0 {
-                                                vec![c, '\n']
-                                            } else {
-                                                vec![c]
-                                            }
-                                        }).collect::<String>()
-                                        .trim_end(),
-                                ),
-                                ts,
-                            ),
-                        ]),
+                            TextSection::new(format!("{}\n", self.filename), ts),
+                        ]).with_style(Style {
+                            size: Size {
+                                width: Val::Px(150.0),
+                                height: Val::Px(180.0),
+                            },
+                            flex_wrap: FlexWrap::Wrap,
+                            ..default()
+                        }),
                         ModuleTextComponent,
                     )).id()
                 );
