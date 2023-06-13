@@ -93,6 +93,9 @@ impl Module for Info {
     fn id(&self) -> Option<usize> {
         self.id
     }
+    fn name(&self) -> Option<String> {
+        self.name.clone()
+    }
     fn component(&self) -> Option<Entity> {
         self.component
     }
@@ -116,6 +119,6 @@ impl<'de> Deserialize<'de> for Info {
     where
         D: serde::Deserializer<'de>,
     {
-        Err(de::Error::custom(&"Cannot use the Info module directly, instead define an [info] section"))
+        Err(de::Error::custom("Cannot use the Info module directly, instead define an [info] section"))
     }
 }

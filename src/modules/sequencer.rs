@@ -10,6 +10,11 @@ represents the length of a single quarter note.
 You may wish to keep a table of note frequencies on hand to make creating
 sequences easier.
 
+##### Note
+For more complicated sequences, try using the
+[MultiSequencer](crate::modules::multi_sequencer) module which can run several
+sequencers one after the other.
+
 ## Inputs
 None
 
@@ -44,13 +49,13 @@ pub struct Sequencer {
     #[serde(skip)]
     children: Vec<Entity>,
 
-    notes: Vec<(f32, f32, f32)>,
+    pub(crate) notes: Vec<(f32, f32, f32)>,
     #[serde(skip)]
     last_note: Option<usize>,
     #[serde(skip)]
-    time: f64,
+    pub(crate) time: f64,
     #[serde(skip)]
-    last_time: f64,
+    pub(crate) last_time: Option<f64>,
 
     knobs: [f32; 1],
 }
@@ -92,6 +97,9 @@ impl Module for Sequencer {
     fn id(&self) -> Option<usize> {
         self.id
     }
+    fn name(&self) -> Option<String> {
+        self.name.clone()
+    }
     fn component(&self) -> Option<Entity> {
         self.component
     }
@@ -100,7 +108,7 @@ impl Module for Sequencer {
         0
     }
     fn outputs(&self) -> usize {
-        2
+        3
     }
     fn knobs(&self) -> usize {
         self.knobs.len()
@@ -123,38 +131,39 @@ impl Module for Sequencer {
             .map(|n| n.2)
             .sum();
 
-        self.time += time - self.last_time;
+        self.time += time - self.last_time.unwrap_or(time);
         self.time %= length as f64 * 60.0 / tempo as f64;
-        self.last_time = time;
+        self.last_time = Some(time);
 
-        let mut note: Option<(f32, f32, f32)> = None;
         let mut time_left = self.time;
         for (i, n) in self.notes.iter()
             .enumerate()
         {
             time_left -= n.2 as f64 * 60.0 / tempo as f64;
             if time_left < 0.0 {
-                note = match self.last_note {
+                let note = match self.last_note {
                     Some(last_note) if last_note == i => {
-                        Some((n.0, n.1, 0.0))
+                        (n.0, n.1, 0.0)
                     },
                     _ if n.1 == 0.0 => {
-                        Some((n.0, n.1, -1.0))
+                        (n.0, n.1, -1.0)
                     },
                     _ => {
-                        Some((n.0, n.1, 1.0))
+                        (n.0, n.1, 1.0)
                     },
                 };
+
                 self.last_note = Some(i);
-                break;
+
+                return vec![
+                    note.0,
+                    note.1,
+                    note.2,
+                ];
             }
         }
 
-        vec![
-            note.unwrap_or_default().0,
-            note.unwrap_or_default().1,
-            note.unwrap_or_default().2,
-        ]
+        vec![0.0, 0.0, 0.0]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {

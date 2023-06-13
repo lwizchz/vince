@@ -21,6 +21,7 @@ pub mod oscilloscope;
 pub mod oscillator;
 pub mod noise;
 pub mod sequencer;
+pub mod multi_sequencer;
 pub mod envelope_generator;
 
 pub mod scaler;
@@ -60,6 +61,7 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     }
 
     fn id(&self) -> Option<usize>;
+    fn name(&self) -> Option<String>;
     fn component(&self) -> Option<Entity>;
 
     fn inputs(&self) -> usize;

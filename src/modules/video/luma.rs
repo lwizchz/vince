@@ -73,6 +73,9 @@ impl Module for Luma {
     fn id(&self) -> Option<usize> {
         self.id
     }
+    fn name(&self) -> Option<String> {
+        self.name.clone()
+    }
     fn component(&self) -> Option<Entity> {
         self.component
     }
