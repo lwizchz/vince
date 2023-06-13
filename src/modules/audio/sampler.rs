@@ -145,6 +145,10 @@ impl Module for Sampler {
             return vec![f32::NAN; self.outputs()];
         }
 
+        if self.sample_readers.is_empty() {
+            self.init_readers();
+        }
+
         const EPSILON: f64 = 0.0625;
 
         let tempo = self.knobs[0];
@@ -197,7 +201,7 @@ impl Module for Sampler {
                 text.sections[3].value = format!("Beat: {}\n", beat.floor() as usize + 1);
 
                 if self.active_samples.is_empty() {
-                    text.sections[4].value = format!("Active: None\n");
+                    text.sections[4].value = "Active: None\n".to_string();
                 } else {
                     let active = self.active_samples.iter()
                         .map(|(sidx, _)| {

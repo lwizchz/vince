@@ -44,6 +44,8 @@ pub struct EnvelopeGenerator {
     attack_timestamp: Option<f64>,
     #[serde(skip)]
     release_timestamp: Option<f64>,
+    #[serde(skip)]
+    last_level: Option<f32>,
 
     knobs: [f32; 4],
 }
@@ -137,7 +139,15 @@ impl Module for EnvelopeGenerator {
                         } else if asr == 0.0 {
                             let rdt = time - rt;
                             if rdt < release as f64 {
-                                let level = x as f64 * sustain as f64;
+                                let level = if x == 0.0 {
+                                    if let Some(last_level) = self.last_level {
+                                        last_level as f64 * sustain as f64
+                                    } else {
+                                        sustain as f64
+                                    }
+                                } else {
+                                    x as f64 * sustain as f64
+                                };
                                 y = (level - rdt * level / release as f64) as f32;
                             }
                         }
@@ -173,7 +183,9 @@ impl Module for EnvelopeGenerator {
                         if asr == 1.0 {
                             self.attack_timestamp = Some(time);
                         } else if asr == 0.0 {
-                            error!("Can't sustain the envelope when it hasn't been triggered");
+                            if x > 0.0 {
+                                error!("Can't sustain the envelope when it hasn't been triggered");
+                            }
                         } else if asr == -1.0 {
                             error!("Can't release the envelope when it hasn't been triggered");
                         }
@@ -182,6 +194,10 @@ impl Module for EnvelopeGenerator {
                     },
                 }
             },
+        }
+
+        if x != 0.0 {
+            self.last_level = Some(x);
         }
 
         if y.abs() < EPSILON {

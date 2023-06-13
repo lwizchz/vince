@@ -1,3 +1,6 @@
+[info]
+mode = "Video"
+
 [modules]
 0M = { name = "RGB Video", type = "ComponentVideoOut" }
 1M = { name = "Luma Video", type = "CompositeVideoOut" }
