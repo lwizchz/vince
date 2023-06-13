@@ -105,16 +105,14 @@ impl Module for Limiter {
             } else {
                 vec![ins[0]]
             }
-        } else {
-            if ins[0] < lower && ins[0] > upper {
-                if lower - ins[0] <= ins[0] - upper {
-                    vec![lower]
-                } else {
-                    vec![upper]
-                }
+        } else if ins[0] < lower && ins[0] > upper {
+            if lower - ins[0] <= ins[0] - upper {
+                vec![lower]
             } else {
-                vec![ins[0]]
+                vec![upper]
             }
+        } else {
+            vec![ins[0]]
         }
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {

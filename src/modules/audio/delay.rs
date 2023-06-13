@@ -14,6 +14,8 @@ The `Delay` module takes an input and applies a delay to it.
 
 */
 
+use std::cmp::Ordering;
+
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
@@ -112,10 +114,14 @@ impl Module for Delay {
 
         let sr = 44100.0;
         let buflen = (delay * sr) as usize;
-        if self.buffer.len() < buflen {
-            self.buffer.extend(vec![0.0; buflen - self.buffer.len()]);
-        } else if self.buffer.len() > buflen {
-            self.buffer.drain(buflen..);
+        match self.buffer.len().cmp(&buflen) {
+            Ordering::Less => {
+                self.buffer.extend(vec![0.0; buflen - self.buffer.len()]);
+            },
+            Ordering::Greater => {
+                self.buffer.drain(buflen..);
+            },
+            Ordering::Equal => {},
         }
 
         let delayed = if buflen > 0 {

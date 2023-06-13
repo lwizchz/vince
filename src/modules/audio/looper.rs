@@ -13,6 +13,8 @@ The `Looper` module takes an input and loops it after a given time.
 
 */
 
+use std::cmp::Ordering;
+
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
 use serde::Deserialize;
@@ -108,13 +110,17 @@ impl Module for Looper {
 
         let d = (duration * 44100.0) as usize;
 
-        if self.buffer.len() > d {
-            self.buffer.drain(d..);
-            if self.idx > d {
-                self.idx = 0;
-            }
-        } else if self.buffer.len() < d {
-            self.buffer.push(ins[0]);
+        match self.buffer.len().cmp(&d) {
+            Ordering::Greater => {
+                self.buffer.drain(d..);
+                if self.idx > d {
+                    self.idx = 0;
+                }
+            },
+            Ordering::Less => {
+                self.buffer.push(ins[0]);
+            },
+            Ordering::Equal => {},
         }
 
         let out = self.buffer[self.idx];

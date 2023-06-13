@@ -107,8 +107,8 @@ impl Module for CompositeVideoOut {
                                 position_type: PositionType::Relative,
                                 position: UiRect::top(Val::Px(10.0)),
                                 size: Size::new(
-                                    Val::Px(f32::from(640 as u16)),
-                                    Val::Px(f32::from(480 as u16)),
+                                    Val::Px(f32::from(640u16)),
+                                    Val::Px(f32::from(480u16)),
                                 ),
                                 ..default()
                             },
