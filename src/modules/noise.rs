@@ -78,9 +78,9 @@ impl Module for Noise {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("Func:\n".to_string(), ts.clone()),
-                            TextSection::new("F\n".to_string(), ts.clone()),
-                            TextSection::new("K0\n".to_string(), ts),
+                            TextSection::new("Func:\n", ts.clone()),
+                            TextSection::new("F\n", ts.clone()),
+                            TextSection::new("K0\n", ts),
                         ]),
                         ModuleTextComponent,
                     )).id()

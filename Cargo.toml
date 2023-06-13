@@ -1,6 +1,6 @@
 [package]
 name = "vince"
-version = "0.3.10"
+version = "0.3.11"
 edition = "2021"
 authors = ["Louise Montalvo <louanmontalvo@gmail.com>"]
 license = "MIT"

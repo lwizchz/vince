@@ -61,7 +61,7 @@ impl Module for Brightness {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("K0\n".to_string(), ts),
+                            TextSection::new("K0\n", ts),
                         ]),
                         ModuleTextComponent,
                     )).id()

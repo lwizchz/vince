@@ -26,14 +26,14 @@ use serde::Deserialize;
 
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent}};
 
-struct FileReader {
+pub(crate) struct FileReader {
     filename: String,
     reader: hound::WavReader<std::io::BufReader<std::fs::File>>,
     idx: usize,
     buffer: Vec<[f32; 2]>,
 }
 impl FileReader {
-    fn new(filename: &str) -> Self {
+    pub(crate) fn new(filename: &str) -> Self {
         FileReader {
             filename: filename.to_string(),
             reader: hound::WavReader::open(filename)
@@ -42,34 +42,49 @@ impl FileReader {
             buffer: vec![],
         }
     }
-    fn read_sample(&mut self) -> [f32; 2] {
+    fn append_sample(&mut self, s: Result<i16, hound::Error>) {
+        let left = s
+            .unwrap_or_else(|msg| panic!("Failed to read sample from WAV file {}: {}", self.filename, msg))
+            as f32 / i16::MAX as f32;
+        let right = if self.reader.spec().channels == 1 {
+            left
+        } else {
+            self.reader.samples::<i16>().next()
+                .unwrap_or_else(|| panic!("Failed to continue reading channel sample from WAV file {}: unbalanced stream", self.filename))
+                .unwrap_or_else(|msg| panic!("Failed to continue reading channel sample from WAV file {}: {}", self.filename, msg))
+                as f32 / i16::MAX as f32
+        };
+
+        self.buffer.push([left, right]);
+        self.idx += 1;
+    }
+    pub(crate) fn rewind(&mut self) {
+        // Finish reading before rewinding
+        while let Some(s) = self.reader.samples::<i16>().next() {
+            self.append_sample(s);
+        }
+
+        self.idx = 0;
+    }
+    pub(crate) fn read_sample(&mut self, should_loop: bool) -> Option<[f32; 2]> {
         let sample = self.reader.samples::<i16>().next();
         match sample {
             Some(s) => {
-                let left = s
-                    .unwrap_or_else(|msg| panic!("Failed to read sample from WAV file {}: {}", self.filename, msg))
-                    as f32 / i16::MAX as f32;
-                let right = if self.reader.spec().channels == 1 {
-                    left
-                } else {
-                    self.reader.samples::<i16>().next()
-                        .unwrap_or_else(|| panic!("Failed to continue reading channel sample from WAV file {}: unbalanced stream", self.filename))
-                        .unwrap_or_else(|msg| panic!("Failed to continue reading channel sample from WAV file {}: {}", self.filename, msg))
-                        as f32 / i16::MAX as f32
-                };
-
-                self.buffer.push([left, right]);
-                self.idx += 1;
+                self.append_sample(s);
             },
             None => {
                 self.idx += 1;
-                self.idx %= self.buffer.len();
+                if should_loop {
+                    self.idx %= self.buffer.len();
+                } else if self.idx-1 == self.buffer.len() {
+                    return None;
+                }
             }
         }
         if self.idx > 0 {
-            self.buffer[self.idx-1]
+            Some(self.buffer[self.idx-1])
         } else {
-            self.buffer[self.buffer.len() - 1]
+            Some(self.buffer[self.buffer.len() - 1])
         }
     }
 }
@@ -102,6 +117,22 @@ pub struct FileDecoder {
     filename: String,
     knobs: [f32; 1],
 }
+impl FileDecoder {
+    pub fn new(filename: &str, gain: f32) -> Self {
+        Self {
+            id: None,
+            name: None,
+
+            component: None,
+            children: vec![],
+
+            reader: None,
+
+            filename: filename.to_string(),
+            knobs: [gain],
+        }
+    }
+}
 #[typetag::deserialize]
 impl Module for FileDecoder {
     fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
@@ -128,7 +159,7 @@ impl Module for FileDecoder {
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
                             TextSection::new(format!("{}\n", self.filename), ts.clone()),
-                            TextSection::new("K0".to_string(), ts),
+                            TextSection::new("K0", ts),
                         ]).with_style(Style {
                             size: Size {
                                 width: Val::Px(150.0),
@@ -173,7 +204,7 @@ impl Module for FileDecoder {
         }
 
         if let Some(reader) = &mut self.reader {
-            let sample = reader.read_sample();
+            let sample = reader.read_sample(true).unwrap();
             vec![
                 sample[0] * self.knobs[0],
                 sample[1] * self.knobs[0],

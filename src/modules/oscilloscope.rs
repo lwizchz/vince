@@ -170,8 +170,8 @@ impl Module for Oscilloscope {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("Level\n".to_string(), ts.clone()),
-                            TextSection::new("Max\n".to_string(), ts),
+                            TextSection::new("Level\n", ts.clone()),
+                            TextSection::new("Max\n", ts),
                         ]),
                         ModuleTextComponent,
                     )).id()

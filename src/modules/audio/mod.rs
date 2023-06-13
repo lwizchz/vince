@@ -1,7 +1,9 @@
 /*!
-The following audio modules are defined here: `Envelope`, `Gate`, `Compressor`,
-`Limiter`, `Equalizer`, `Delay`, `Panner`, `Fuzz`, `Looper`
+The following audio modules are defined here: `Sampler`, `Envelope`, `Gate`,
+`Compressor`, `Limiter`, `Equalizer`, `Delay`, `Panner`, `Fuzz`, `Looper`
 */
+
+pub mod sampler;
 
 pub mod envelope;
 pub mod gate;

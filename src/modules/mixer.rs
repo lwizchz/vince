@@ -60,8 +60,8 @@ impl Module for Mixer {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("K0\n".to_string(), ts.clone()),
-                            TextSection::new("K1\n".to_string(), ts),
+                            TextSection::new("K0\n", ts.clone()),
+                            TextSection::new("K1\n", ts),
                         ]),
                         ModuleTextComponent,
                     )).id()

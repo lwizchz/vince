@@ -13,7 +13,9 @@ sequences easier.
 ##### Note
 For more complicated sequences, try using the
 [MultiSequencer](crate::modules::multi_sequencer) module which can run several
-sequencers one after the other.
+sequencers one after the other. Or try the
+[Sampler](crate::modules::audio::sampler) module which can run multiple sample
+sequences at the same time.
 
 ## Inputs
 None
@@ -84,7 +86,7 @@ impl Module for Sequencer {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("K0\n".to_string(), ts),
+                            TextSection::new("K0\n", ts),
                         ]),
                         ModuleTextComponent,
                     )).id()

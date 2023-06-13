@@ -57,7 +57,7 @@ impl Module for Scaler {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("K0".to_string(), ts),
+                            TextSection::new("K0", ts),
                         ]),
                         ModuleTextComponent,
                     )).id()

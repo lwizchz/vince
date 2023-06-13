@@ -58,6 +58,7 @@ example.
 #![feature(impl_trait_in_assoc_type)]
 #![feature(iter_array_chunks)]
 #![feature(drain_filter)]
+#![feature(path_file_prefix)]
 
 #![deny(rust_2018_idioms)]
 #![allow(elided_lifetimes_in_paths)]
