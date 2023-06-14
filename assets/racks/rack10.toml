@@ -1,5 +1,5 @@
 [modules]
-0M = { type = "AudioOut", knobs = [1.0] }
+0M = { type = "AudioOut", knobs = [0.1] }
 
 1M = { type = "MidiIn" }
 2M = { name = "Midi Scope", type = "Oscilloscope" }

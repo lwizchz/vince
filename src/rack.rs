@@ -250,10 +250,9 @@ impl Rack {
                 let signal = oddio::FramesSignal::from(frames);
 
                 let reinhard = oddio::Reinhard::new(signal);
-                let fgain = oddio::FixedGain::new(reinhard, -20.0);
 
                 let mut samples = [[0.0; 2]; AUDIO_BUFFER_SIZE];
-                fgain.sample(1.0 / sr as f32, &mut samples);
+                reinhard.sample(1.0 / sr as f32, &mut samples);
                 audio_context.output.buf_stream_handle
                     .control::<oddio::Stream<_>, _>()
                     .write(&samples);

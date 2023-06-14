@@ -3,7 +3,7 @@ name = "Are You With Me?"
 author = "Louise Montalvo <louanmontalvo@gmail.com>"
 
 [modules]
-0M = { type = "AudioOut", knobs = [1.0] }
+0M = { type = "AudioOut", knobs = [0.1] }
 
 1M = { type = "Sequencer", notes = [
         [349.23, 1.0, 0.25],

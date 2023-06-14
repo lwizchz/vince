@@ -3,7 +3,7 @@ name = "Hopefully (bass)"
 author = "Louise Montalvo <louanmontalvo@gmail.com>"
 
 [modules]
-0M = { type = "AudioOut", knobs = [1.0] }
+0M = { type = "AudioOut", knobs = [0.1] }
 
 1M = { type = "MultiSequencer", sequencers = [
         [

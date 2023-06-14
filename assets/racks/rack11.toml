@@ -1,5 +1,5 @@
 [modules]
-0M = { type = "AudioOut", knobs = [1.0] }
+0M = { type = "AudioOut", knobs = [0.1] }
 
 1M = { type = "FileDecoder", filename = "assets/sounds/stereo_test.wav", knobs = [1.0] }
 2M = { type = "Mixer", knobs = [0.5, 0.5] }

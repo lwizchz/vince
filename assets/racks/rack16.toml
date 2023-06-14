@@ -2,7 +2,7 @@
 mode = "Video"
 
 [modules]
-0M = { type = "AudioOut", knobs = [1.0] }
+0M = { type = "AudioOut", knobs = [0.1] }
 1M = { type = "ComponentVideoOut" }
 
 2M = { type = "FileDecoder", filename = "assets/sounds/mono_test.wav", knobs = [1.0] }

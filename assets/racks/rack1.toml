@@ -1,5 +1,5 @@
 [modules]
-0M = { name = "Audio Out", type = "AudioOut", knobs = [1.0] }
+0M = { name = "Audio Out", type = "AudioOut", knobs = [0.1] }
 
 1M = { name = "LFO 1", type = "Oscillator", func = "Square", knobs = [0.0, 1.0, 200.0, 0.0] }
 # 2M = { name = "Scope 1", type = "Oscilloscope" }
