@@ -8,7 +8,7 @@ The `Compressor` module takes an input and compresses it the given amount.
 0. The compressed signal
 
 ## Knobs
-0. Compression ratio in the range (0.0, 1.0)
+0. Compression ratio in the range (0.0, inf)
 1. Threshold in the range [0.0, inf)
 2. Makeup gain in the range [0.0, inf)
 
@@ -103,9 +103,13 @@ impl Module for Compressor {
         let threshold = self.knobs[1];
         let makeup = self.knobs[2];
 
+        if ratio == 0.0 {
+            return vec![ins[0] * (1.0 + makeup)];
+        }
+
         if ins[0].abs() > threshold {
             let excess = ins[0].abs() - threshold;
-            vec![ins[0].signum() * (threshold + excess * ratio) * (1.0 + makeup)]
+            vec![ins[0].signum() * (threshold + excess / ratio) * (1.0 + makeup)]
         } else {
             vec![ins[0] * (1.0 + makeup)]
         }

@@ -1,6 +1,15 @@
 /*!
 The `Equalizer` module takes an input and applies a gain to it in the given
-frequency range.
+frequency range based on the chosen filter function.
+
+## Filter Functions
+ * `LPF` - a low-pass filter
+ * `HPF` - a high-pass filter
+ * `BPF` - a band-pass filter, the default
+ * `Notch` - a notch filter
+ * `APF` - an all-pass filter
+ * `LowShelf` - a low shelf
+ * `HighShelf` - a high shelf
 
 ## Inputs
 0. The signal to boost or cut
@@ -23,6 +32,18 @@ use serde::Deserialize;
 
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent}};
 
+#[derive(Default, Deserialize, Debug, Clone)]
+pub enum EqualizerFunc {
+    LPF,
+    HPF,
+    #[default]
+    BPF,
+    Notch,
+    APF,
+    LowShelf,
+    HighShelf,
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Equalizer {
     #[serde(skip)]
@@ -34,6 +55,9 @@ pub struct Equalizer {
     component: Option<Entity>,
     #[serde(skip)]
     children: Vec<Entity>,
+
+    #[serde(default)]
+    func: EqualizerFunc,
 
     #[serde(skip)]
     xs: [f32; 2],
@@ -67,6 +91,7 @@ impl Module for Equalizer {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
+                            TextSection::new("Func\n", ts.clone()),
                             TextSection::new("K0\n", ts.clone()),
                             TextSection::new("K1\n", ts.clone()),
                             TextSection::new("K2\n", ts),
@@ -125,17 +150,100 @@ impl Module for Equalizer {
         let w_0 = 2.0 * PI * f_0 / f_s;
         let alpha = w_0.sin() / 2.0 / q;
 
-        // bpf
-        let a = [
-            1.0 + alpha,
-            -2.0 * w_0.cos(),
-            1.0 - alpha,
-        ];
-        let b = [
-            g * w_0.sin() / 2.0,
-            0.0,
-            g * -w_0.sin() / 2.0,
-        ];
+        let (a, b) = match self.func {
+            EqualizerFunc::LPF => (
+                [
+                    1.0 + alpha,
+                    -2.0 * w_0.cos(),
+                    1.0 - alpha,
+                ],
+                [
+                    g * (1.0 - w_0.cos()) / 2.0,
+                    g * (1.0 - w_0.cos()),
+                    g * (1.0 - w_0.cos()) / 2.0,
+                ]
+            ),
+            EqualizerFunc::HPF => (
+                [
+                    1.0 + alpha,
+                    -2.0 * w_0.cos(),
+                    1.0 - alpha,
+                ],
+                [
+                    g * (1.0 + w_0.cos()) / 2.0,
+                    g * (-1.0 - w_0.cos()),
+                    g * (1.0 + w_0.cos()) / 2.0,
+                ]
+            ),
+            EqualizerFunc::BPF => (
+                [
+                    1.0 + alpha,
+                    -2.0 * w_0.cos(),
+                    1.0 - alpha,
+                ],
+                [
+                    g * w_0.sin() / 2.0,
+                    0.0,
+                    g * -w_0.sin() / 2.0,
+                ]
+            ),
+            EqualizerFunc::Notch => (
+                [
+                    1.0 + alpha,
+                    -2.0 * w_0.cos(),
+                    1.0 - alpha,
+                ],
+                [
+                    g,
+                    g * -2.0 * w_0.cos(),
+                    g,
+                ]
+            ),
+            EqualizerFunc::APF => (
+                [
+                    1.0 + alpha,
+                    -2.0 * w_0.cos(),
+                    1.0 - alpha,
+                ],
+                [
+                    g * (1.0 - alpha),
+                    g * -2.0 * w_0.cos(),
+                    g * (1.0 + alpha),
+                ]
+            ),
+            EqualizerFunc::LowShelf => {
+                let dbgain = 10.0 * g.log10();
+                let big_a = 10.0f32.powf(dbgain / 40.0);
+                (
+                    [
+                        big_a + 1.0 + (big_a - 1.0) * w_0.cos() + 2.0 * big_a.sqrt() * alpha,
+                        -2.0 * (big_a - 1.0 + (big_a + 1.0) * w_0.cos()),
+                        big_a + 1.0 + (big_a - 1.0) * w_0.cos() - 2.0 * big_a.sqrt() * alpha,
+                    ],
+                    [
+                        big_a * (big_a + 1.0 - (big_a  - 1.0) * w_0.cos() + 2.0 * big_a.sqrt() * alpha),
+                        2.0 * big_a * (big_a - 1.0 - (big_a + 1.0) * w_0.cos()),
+                        big_a * (big_a + 1.0 - (big_a - 1.0) * w_0.cos() - 2.0 * big_a.sqrt() * alpha),
+                    ]
+                )
+            },
+            EqualizerFunc::HighShelf => {
+                let dbgain = 10.0 * g.log10();
+                let big_a = 10.0f32.powf(dbgain / 40.0);
+                (
+                    [
+                        big_a + 1.0 - (big_a - 1.0) * w_0.cos() + 2.0 * big_a.sqrt() * alpha,
+                        2.0 * (big_a - 1.0 - (big_a + 1.0) * w_0.cos()),
+                        big_a + 1.0 - (big_a - 1.0) * w_0.cos() - 2.0 * big_a.sqrt() * alpha,
+                    ],
+                    [
+                        big_a * (big_a + 1.0 + (big_a  - 1.0) * w_0.cos() + 2.0 * big_a.sqrt() * alpha),
+                        -2.0 * big_a * (big_a - 1.0 + (big_a + 1.0) * w_0.cos()),
+                        big_a * (big_a + 1.0 + (big_a - 1.0) * w_0.cos() - 2.0 * big_a.sqrt() * alpha),
+                    ]
+                )
+            },
+        };
 
         let y = b[0] / a[0] * x
             + b[1] / a[0] * self.xs[0]
@@ -153,9 +261,10 @@ impl Module for Equalizer {
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("K0 Frequency: {}\n", self.knobs[0]);
-                text.sections[2].value = format!("K1 Q: {}\n", self.knobs[1]);
-                text.sections[3].value = format!("K2 Gain: {}\n", self.knobs[2]);
+                text.sections[1].value = format!("Func: {:?}\n", self.func);
+                text.sections[2].value = format!("K0 Frequency: {}\n", self.knobs[0]);
+                text.sections[3].value = format!("K1 Q: {}\n", self.knobs[1]);
+                text.sections[4].value = format!("K2 Gain: {}\n", self.knobs[2]);
             }
         }
     }

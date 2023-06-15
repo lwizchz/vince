@@ -113,6 +113,12 @@ impl Module for Fuzz {
         }
 
         let y = x / x.abs() * (1.0 - E.powf(distortion * x.powi(2) / x.abs()));
+        if y.is_infinite() {
+            if dwmix == 0.0 {
+                return vec![x * volume];
+            }
+            return vec![f32::MAX];
+        }
 
         vec![
             x * volume * (1.0 - dwmix)

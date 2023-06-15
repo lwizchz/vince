@@ -2,13 +2,13 @@
 The `Oscillator` module outputs a generated wave with a given gain.
 
 ## Wave Functions
- * `Sine` - a smooth wave
+ * `Sine` - a smooth wave, the default
  * `Triangle` - a linear sine-like wave
  * `Square` - a binary wave
  * `Saw` - a linear ramp-like wave
 
 ## Sync Modes
- * `None` - Do not perform syncing
+ * `None` - Do not perform syncing, the default
  * `Horizontal` - Apply horizontal syncing, i.e. reset the phase every video
    frame
  * `Vertical` - Apply vertical syncing, i.e. reset the phase every video line
