@@ -9,7 +9,7 @@ None
 0. The audio signal from the primary audio device
 
 ##### Note
-If the audio buffer becomes empty, the output will be f32::NAN.
+If the audio buffer becomes empty, the output will be [f32::NAN].
 
 ## Knobs
 0. Gain in the range [0.0, inf)

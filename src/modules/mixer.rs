@@ -1,10 +1,12 @@
 /*!
-The `Mixer` module takes 2 inputs and adds them together, applying a separate
-gain to each.
+The `Mixer` module takes up to 8 inputs and adds them together, applying a
+separate gain to each.
 
 ## Inputs
 0. First signal
 1. Second signal
+...
+7. Eighth signal
 
 ## Outputs
 0. The combined signal
@@ -12,6 +14,8 @@ gain to each.
 ## Knobs
 0. Gain for Input 0 in the range [0.0, inf)
 1. Gain for Input 1 in the range [0.0, inf)
+...
+7. Gain for Input 7 in the range [0.0, inf)
 
 */
 
@@ -33,7 +37,7 @@ pub struct Mixer {
     #[serde(skip)]
     children: Vec<Entity>,
 
-    knobs: [f32; 2],
+    knobs: [f32; 8],
 }
 #[typetag::deserialize]
 impl Module for Mixer {
@@ -61,7 +65,13 @@ impl Module for Mixer {
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
                             TextSection::new("K0\n", ts.clone()),
-                            TextSection::new("K1\n", ts),
+                            TextSection::new("K1\n", ts.clone()),
+                            TextSection::new("K2\n", ts.clone()),
+                            TextSection::new("K3\n", ts.clone()),
+                            TextSection::new("K4\n", ts.clone()),
+                            TextSection::new("K5\n", ts.clone()),
+                            TextSection::new("K6\n", ts.clone()),
+                            TextSection::new("K7\n", ts),
                         ]),
                         ModuleTextComponent,
                     )).id()
@@ -82,7 +92,7 @@ impl Module for Mixer {
     }
 
     fn inputs(&self) -> usize {
-        2
+        8
     }
     fn outputs(&self) -> usize {
         1
@@ -100,7 +110,16 @@ impl Module for Mixer {
 
     fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
         vec![
-            ins[0] * self.knobs[0] + ins[1] * self.knobs[1]
+            ins.iter()
+                .map(|inp| {
+                    if inp.is_nan() {
+                        0.0
+                    } else {
+                        *inp
+                    }
+                }).zip(self.knobs.iter())
+                .map(|(inp, gain)| inp * gain)
+                .sum()
         ]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
@@ -108,6 +127,12 @@ impl Module for Mixer {
             if let Ok(mut text) = q_text.get_mut(*component) {
                 text.sections[1].value = format!("K0 Gain 1: {}\n", self.knobs[0]);
                 text.sections[2].value = format!("K1 Gain 2: {}\n", self.knobs[1]);
+                text.sections[3].value = format!("K2 Gain 3: {}\n", self.knobs[2]);
+                text.sections[4].value = format!("K3 Gain 4: {}\n", self.knobs[3]);
+                text.sections[5].value = format!("K4 Gain 5: {}\n", self.knobs[4]);
+                text.sections[6].value = format!("K5 Gain 6: {}\n", self.knobs[5]);
+                text.sections[7].value = format!("K6 Gain 7: {}\n", self.knobs[6]);
+                text.sections[8].value = format!("K7 Gain 8: {}\n", self.knobs[7]);
             }
         }
     }

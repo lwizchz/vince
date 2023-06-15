@@ -1,7 +1,7 @@
 /*!
-The `ComponentVideoOut` module takes 3 inputs and displays them as RGB data on a
-[80](ComponentVideoOut::WIDTH)x[60](ComponentVideoOut::HEIGHT) screen which is
-upscaled to 640x480.
+The `ComponentVideoOut` module takes 3 inputs and displays them as RGB data on
+a [80](ComponentVideoOut::WIDTH)x[60](ComponentVideoOut::HEIGHT) screen which
+is upscaled to 640x480.
 
 ## Inputs
 0. Red channel

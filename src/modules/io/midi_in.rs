@@ -18,7 +18,7 @@ None
 9. Control signal 8
 
 ##### Note
-If the MIDI port becomes stalled, the outputs will all be f32::NAN.
+If the MIDI port becomes stalled, the outputs will all be [f32::NAN].
 
 ## Knobs
 None

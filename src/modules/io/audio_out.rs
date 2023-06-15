@@ -7,7 +7,8 @@ audio device.
 1. The right channel of the audio signal
 
 ##### Note
-If the right channel is NAN (unpatched), then the left channel will be doubled.
+If the right channel is [f32::NAN] (unpatched), then the left channel will be
+copied to it.
 
 ## Outputs
 None

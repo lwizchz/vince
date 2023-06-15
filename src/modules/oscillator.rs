@@ -17,7 +17,7 @@ The `Oscillator` module outputs a generated wave with a given gain.
 None
 
 ## Outputs
-0. The wave signal in the range [-K0, K0] where K0 is knob 0
+0. The wave signal in the range [-K2, K2] where K2 is knob 2
 
 ## Knobs
 0. Shift in the range (-inf, inf), affects the signal vertically

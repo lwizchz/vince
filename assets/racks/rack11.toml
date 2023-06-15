@@ -2,7 +2,16 @@
 0M = { type = "AudioOut", knobs = [0.1] }
 
 1M = { type = "FileDecoder", filename = "assets/sounds/stereo_test.wav", knobs = [1.0] }
-2M = { type = "Mixer", knobs = [0.5, 0.5] }
+2M = { type = "Mixer", knobs = [
+        0.5, # Left channel
+        0.5, # Right channel
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ] }
 
 3M = { type = "Equalizer", knobs = [1000.0, 10.0, 5.0] }
 4M = { type = "Oscilloscope" }

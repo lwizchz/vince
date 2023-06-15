@@ -9,7 +9,8 @@ The `Panner` module takes an input and applies a panning to it.
 1. The right channel
 
 ## Knobs
-0. Panning in the range [-1.0, 1.0] where -1.0 is full left and 1.0 is full right
+0. Panning in the range [-1.0, 1.0] where -1.0 is full left and 1.0 is full
+right
 
 */
 

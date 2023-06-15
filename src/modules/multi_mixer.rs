@@ -1,21 +1,23 @@
 /*!
-The `MultiMixer` module takes up to 8 inputs and adds them together, applying a
-separate gain to each.
+The `MultiMixer` module takes any amount of inputs and adds them together,
+applying a gain afterwards.
+
+##### Note
+Unlike the [Mixer](crate::modules::mixer) module, separate gains cannot be
+applied to each input. If you need such functionality, consider patching
+multiple `Mixer`s together.
 
 ## Inputs
 0. First signal
 1. Second signal
 ...
-7. Eighth signal
+N. Nth signal
 
 ## Outputs
 0. The combined signal
 
 ## Knobs
-0. Gain for Input 0 in the range [0.0, inf)
-1. Gain for Input 1 in the range [0.0, inf)
-...
-7. Gain for Input 7 in the range [0.0, inf)
+0. Gain in the range [0.0, inf)
 
 */
 
@@ -37,7 +39,7 @@ pub struct MultiMixer {
     #[serde(skip)]
     children: Vec<Entity>,
 
-    knobs: [f32; 8],
+    knobs: [f32; 1],
 }
 #[typetag::deserialize]
 impl Module for MultiMixer {
@@ -64,14 +66,7 @@ impl Module for MultiMixer {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("K0\n", ts.clone()),
-                            TextSection::new("K1\n", ts.clone()),
-                            TextSection::new("K2\n", ts.clone()),
-                            TextSection::new("K3\n", ts.clone()),
-                            TextSection::new("K4\n", ts.clone()),
-                            TextSection::new("K5\n", ts.clone()),
-                            TextSection::new("K6\n", ts.clone()),
-                            TextSection::new("K7\n", ts),
+                            TextSection::new("K0\n", ts),
                         ]),
                         ModuleTextComponent,
                     )).id()
@@ -92,7 +87,7 @@ impl Module for MultiMixer {
     }
 
     fn inputs(&self) -> usize {
-        8
+        usize::MAX
     }
     fn outputs(&self) -> usize {
         1
@@ -117,22 +112,14 @@ impl Module for MultiMixer {
                     } else {
                         *inp
                     }
-                }).zip(self.knobs.iter())
-                .map(|(inp, gain)| inp * gain)
-                .sum()
+                }).sum::<f32>()
+            * self.knobs[0]
         ]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("K0 Gain 1: {}\n", self.knobs[0]);
-                text.sections[2].value = format!("K1 Gain 2: {}\n", self.knobs[1]);
-                text.sections[3].value = format!("K2 Gain 3: {}\n", self.knobs[2]);
-                text.sections[4].value = format!("K3 Gain 4: {}\n", self.knobs[3]);
-                text.sections[5].value = format!("K4 Gain 5: {}\n", self.knobs[4]);
-                text.sections[6].value = format!("K5 Gain 6: {}\n", self.knobs[5]);
-                text.sections[7].value = format!("K6 Gain 7: {}\n", self.knobs[6]);
-                text.sections[8].value = format!("K7 Gain 8: {}\n", self.knobs[7]);
+                text.sections[1].value = format!("K0 Gain: {}\n", self.knobs[0]);
             }
         }
     }

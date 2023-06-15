@@ -10,10 +10,11 @@ None
 1. The right channel of the audio signal
 
 ##### Note
-If the right channel is missing, then the left channel will be doubled.
+If the right channel is missing, then the left channel will be copied to both
+outputs.
 
 ##### Note
-If the audio buffer becomes empty, the outputs will both be f32::NAN.
+If the audio buffer becomes empty, the outputs will both be [f32::NAN].
 
 ## Knobs
 0. Gain in the range [0.0, inf)

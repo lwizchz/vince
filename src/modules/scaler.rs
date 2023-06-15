@@ -2,7 +2,7 @@
 The `Scaler` module takes an input and scales it, optionally inverting it.
 
 ## Inputs
-0. The original signal
+0. The signal to scale
 
 ## Outputs
 1. The scaled signal

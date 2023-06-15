@@ -2,15 +2,13 @@
 The `Inverter` module takes an input and subtracts it from 1.0.
 
 ## Inputs
-0. First signal
-1. Second signal
+0. The signal to invert
 
 ## Outputs
-0. The combined signal
+0. The inverted signal
 
 ## Knobs
-0. Gain for Input 0 in the range [0.0, inf)
-1. Gain for Input 1 in the range [0.0, inf)
+None
 
 */
 

@@ -6,10 +6,10 @@ given amount.
 0. Color channel in the range [0.0, 1.0]
 
 ## Outputs
-0. Color channel in the range [0.0+boost, 1.0+boost]
+0. Color channel in the range [0.0, 1.0]
 
 ##### Note
-The output will be clamped to the range [0.0, 1.0]
+The output will be clamped to the range [0.0, 1.0].
 
 ## Knobs
 0. Boost or cut in the range [-1.0, 1.0]

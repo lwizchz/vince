@@ -6,6 +6,7 @@ The `Compressor` module takes an input and compresses it the given amount.
 
 ## Outputs
 0. The compressed signal
+1. The amount of gain reduction applied to the signal
 
 ## Knobs
 0. Compression ratio in the range (0.0, inf)
@@ -85,7 +86,7 @@ impl Module for Compressor {
         1
     }
     fn outputs(&self) -> usize {
-        1
+        2
     }
     fn knobs(&self) -> usize {
         self.knobs.len()
@@ -104,14 +105,23 @@ impl Module for Compressor {
         let makeup = self.knobs[2];
 
         if ratio == 0.0 {
-            return vec![ins[0] * (1.0 + makeup)];
+            return vec![
+                ins[0] * (1.0 + makeup),
+                0.0,
+            ];
         }
 
         if ins[0].abs() > threshold {
             let excess = ins[0].abs() - threshold;
-            vec![ins[0].signum() * (threshold + excess / ratio) * (1.0 + makeup)]
+            vec![
+                ins[0].signum() * (threshold + excess / ratio) * (1.0 + makeup),
+                excess - excess / ratio,
+            ]
         } else {
-            vec![ins[0] * (1.0 + makeup)]
+            vec![
+                ins[0] * (1.0 + makeup),
+                0.0,
+            ]
         }
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {

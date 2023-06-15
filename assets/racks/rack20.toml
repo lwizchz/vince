@@ -4,7 +4,16 @@ author = "Louise Montalvo <louanmontalvo@gmail.com>"
 
 [modules]
 0M = { type = "AudioOut", knobs = [0.1] }
-1M = { type = "MultiMixer", knobs = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] }
+1M = { type = "Mixer", knobs = [
+        1.0, # Kick
+        1.0, # Snare
+        1.0, # Tom Mid
+        1.0, # Hat Closed
+        1.0, # Hat Open
+        1.0, # Cymbal Soft
+        0.0,
+        0.0,
+    ] }
 
 2M = { type = "Sampler", samples = [
         [

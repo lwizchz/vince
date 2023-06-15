@@ -2,7 +2,8 @@
 The `VideoIn` module outputs 3 signals as RGB data from a given video source.
 
 ## Video Sources
- * `Screen` - Output video from a region on the screen. Currently hard-coded as:
+ * `Screen` - Output video from a region on the screen. Currently hard-coded
+   as:
    {
        x: 0,
        y: 0,
@@ -21,7 +22,7 @@ None
 2. Gamma-corrected blue channel in the range [0.0, 1.0]
 
 ##### Note
-If the video buffer becomes empty, the outputs will all be f32::NAN.
+If the video buffer becomes empty, the outputs will all be [f32::NAN].
 
 ## Knobs
 None

@@ -10,8 +10,8 @@ The `Luma` module takes 3 inputs and converts them from RGB data to Luma.
 0. Luma channel in the range [0.0, 1.0]
 
 ##### Note
-If all inputs are NAN (unpatched), the output will be f32::NAN. Otherwise NANs
-are treated as 0.0.
+If all inputs are [f32::NAN] (unpatched), the output will be [f32::NAN].
+Otherwise NANs are treated as 0.0.
 
 ## Knobs
 None
