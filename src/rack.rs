@@ -51,6 +51,9 @@ pub struct Rack {
 
     pub modules: HashMap<ModuleKey, Box<dyn Module>>,
     pub patches: Patches,
+
+    #[serde(skip)]
+    outs: HashMap<ModuleKey, f32>,
 }
 impl Rack {
     pub(crate) fn init_audio(&mut self) {
@@ -157,6 +160,8 @@ impl Rack {
             },
             input,
         });
+
+        self.outs = HashMap::with_capacity(self.modules.len());
     }
 
     pub fn step(&mut self, time: f64, st: StepType) {
@@ -165,7 +170,6 @@ impl Rack {
         }
 
         let mut stepped: Vec<usize> = Vec::with_capacity(self.modules.len());
-        let mut outs: HashMap<ModuleKey, f32> = HashMap::with_capacity(self.modules.len());
 
         // Step all modules which take no inputs
         for (k, m) in self.modules.iter_mut()
@@ -178,7 +182,7 @@ impl Rack {
             let mouts = m.step(time, st, &vec![0.0; m.inputs()]);
             stepped.push(k.id);
             for (i, mo) in mouts.iter().enumerate() {
-                outs.insert(ModuleKey {
+                self.outs.insert(ModuleKey {
                     id: k.id,
                     iok: ModuleIOK::Output(i),
                 }, *mo);
@@ -186,6 +190,7 @@ impl Rack {
         }
 
         // Step all other modules
+        let mut step_count = 0;
         while stepped.len() < self.modules.len() {
             for (k, m) in &mut self.modules {
                 if !stepped.contains(&k.id) {
@@ -194,14 +199,14 @@ impl Rack {
                         .collect();
                     if inpatches.iter()
                         .all(|p| {
-                            outs.iter()
+                            self.outs.iter()
                                 .any(|o| o.0 == p.0)
                         })
                     {
                         let mut mins = vec![f32::NAN; m.inputs()];
 
                         for p in inpatches {
-                            if let Some(o) = outs.iter().find(|o| o.0 == p.0) {
+                            if let Some(o) = self.outs.iter().find(|o| o.0 == p.0) {
                                 match p.1.iok {
                                     ModuleIOK::Input(i) => mins[i] = *o.1,
                                     ModuleIOK::Knob(i) => {
@@ -209,15 +214,17 @@ impl Rack {
                                             m.set_knob(i, *o.1)
                                         }
                                     },
-                                    _ => error!("Can't patch an output to another output"),
+                                    ModuleIOK::Output(_) => error!("Can't patch an output to another output"),
+                                    ModuleIOK::None => error!("Module IOK not specified for patch {:?}", p.1.iok),
                                 }
                             }
                         }
 
                         let mouts = m.step(time, st, &mins);
                         stepped.push(k.id);
+                        step_count += 0;
                         for (i, mo) in mouts.iter().enumerate() {
-                            outs.insert(ModuleKey {
+                            self.outs.insert(ModuleKey {
                                 id: k.id,
                                 iok: ModuleIOK::Output(i),
                             }, *mo);
@@ -225,6 +232,17 @@ impl Rack {
                     }
                 }
             }
+
+            if step_count == 0 {
+                // Handle input feedback patches that haven't been output yet
+                self.outs.extend(
+                    self.patches.iter()
+                        .filter(|p| !self.outs.contains_key(p.0))
+                        .map(|p| (*p.0, f32::NAN))
+                        .collect::<HashMap<ModuleKey, f32>>()
+                );
+            }
+            step_count = 0;
         }
 
         if let Some(audio_context) = &mut self.audio_context {
@@ -282,19 +300,23 @@ impl Rack {
                 .filter(|p| p.1.id == k.id)
                 .collect();
             for p in inpatches {
-                if let Some(o) = outs.iter().find(|o| o.0 == p.0) {
+                if let Some(o) = self.outs.iter().find(|o| o.0 == p.0) {
                     match p.1.iok {
                         ModuleIOK::Knob(i) => {
                             if !o.1.is_nan() {
                                 m.set_knob(i, *o.1)
                             }
                         },
-                        ModuleIOK::Input(_) => {}, // TODO apply feedback patches to inputs?
-                        _ => error!("Can't feedback patch an output to another output"),
+                        ModuleIOK::Input(_) => {}, // Input feedback patches are handled above
+                        ModuleIOK::Output(_) => error!("Can't feedback patch an output to another output"),
+                        ModuleIOK::None => error!("Module IOK not specified for feedback patch {:?}", p.1.iok),
                     }
                 }
             }
         }
+
+        // Remove NANs from output map
+        self.outs.drain_filter(|_, v| v.is_nan());
     }
     pub fn render(&mut self, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         for m in self.modules.values_mut() {

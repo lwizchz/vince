@@ -1,0 +1,168 @@
+[modules]
+0M = { type = "AudioOut", knobs = [0.1] }
+1M = { type = "Delay", knobs = [0.1, 0.7, 1.0] }
+2M = { type = "Mixer", knobs = [
+        0.9, # Feedback
+        0.0, # Noise
+        0.05, # Wave 1
+        0.1, # Wave 2
+        0.5, # Wave 3
+        4.0, # Drums
+        0.0,
+        0.0,
+    ] }
+3M = { type = "Oscilloscope" }
+
+4M = { type = "Noise", knobs = [1.0] }
+5M = { type = "PitchShifter", knobs = [0.0] }
+6M = { type = "Scaler", knobs = [0.1] }
+# 7M = { type = "Fuzz", knobs = [11.0, 0.1, 1.0] }
+8M = { type = "Oscillator", func = "Square", knobs = [0.0, 440.0, 1.0, 0.0] }
+9M = { type = "Oscillator", func = "Square", knobs = [0.0, 440.0, 1.0, 0.5] }
+
+10M = { type = "Envelope" }
+11M = { type = "Scaler", knobs = [100000.0] }
+12M = { type = "Limiter", knobs = [1000.0, inf] }
+13M = { type = "Oscillator", func = "Square", knobs = [0.0, 440.0, 1.0, 0.25]}
+
+14M = { type = "Mixer", knobs = [
+        1.0, # Kick
+        1.0, # Snare
+        1.0, # Tom Mid
+        1.0, # Hat Closed
+        1.0, # Hat Open
+        1.0, # Cymbal Soft
+        0.0,
+        0.0,
+    ] }
+15M = { type = "Sampler", samples = [
+        [
+            "assets/sounds/808-aristocrat/kick.wav",
+            [
+                [0.00, 1.0],
+                [0.50, 1.0],
+
+                [4.00, 1.0],
+                [4.50, 1.0],
+
+                [8.00, 1.0],
+                [8.50, 1.0],
+
+                [12.00, 1.0],
+                [12.50, 1.0],
+            ],
+        ],
+        [
+            "assets/sounds/808-aristocrat/snare.wav",
+            [
+                [1.00, 1.0],
+
+                [5.00, 1.0],
+
+                [9.00, 1.0],
+
+                [13.00, 1.0],
+            ],
+        ],
+        [
+            "assets/sounds/808-aristocrat/tom-mid.wav",
+            [
+
+            ],
+        ],
+        [
+            "assets/sounds/808-aristocrat/hat-closed.wav",
+            [
+
+            ],
+        ],
+        [
+            "assets/sounds/808-aristocrat/hat-open.wav",
+            [
+
+            ],
+        ],
+        [
+            "assets/sounds/808-aristocrat/cymbal-soft.wav",
+            [
+                [14.00, 1.0],
+                [14.25, 1.0],
+                [14.50, 1.0],
+                [14.75, 1.0],
+                [15.00, 1.0],
+                [15.25, 1.0],
+                [15.50, 1.0],
+                [15.75, 1.0],
+            ],
+        ],
+    ], knobs = [100.0, 16.0] }
+
+[patches]
+1M0O = [
+    "0M0I",
+    # "3M0I",
+]
+2M0O = [
+    "1M0I",
+    "1M0I",
+    "2M0I",
+    "3M0I",
+    "5M0I",
+]
+4M0O = [
+    "2M1I",
+    # "6M2K",
+    # "10M0I",
+]
+5M2O = [
+    "6M0I",
+    # "7M0I",
+    "9M1K",
+    "10M0I",
+]
+6M0O = [
+    "8M1K",
+    # "9M1K",
+]
+# 7M0O = [
+#     "9M1K",
+# ]
+8M0O = [
+    "2M2I",
+]
+9M0O = [
+    "2M3I",
+]
+10M0O = [
+    "11M0I",
+]
+11M0O = [
+    "12M0I",
+]
+12M0O = [
+    "13M1K",
+]
+13M0O = [
+    "2M4I",
+]
+14M0O = [
+    "2M5I",
+]
+15M0O = [
+    "14M0I",
+]
+15M1O = [
+    "14M1I",
+]
+15M2O = [
+    "14M2I",
+]
+15M3O = [
+    "14M3I",
+]
+15M4O = [
+    "14M4I",
+]
+15M5O = [
+    "14M5I",
+]
