@@ -1,0 +1,52 @@
+[modules]
+0M = { type = "AudioOut", knobs = [0.1] }
+1M = { type = "Mixer", knobs = [
+        0.0, # Dry
+        1.0, # Pitch Shifted
+        0.0, # Resynthesized
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]}
+
+2M = { type = "FileDecoder", filename = "assets/sounds/organ_reference.wav", knobs = [1.0] }
+3M = { type = "PitchShifter", func = "Simple", knobs = [12.0] }
+4M = { name = "Dry", type = "Oscilloscope" }
+5M = { name = "Octave Up", type = "Oscilloscope" }
+
+6M = { name = "Primary Freq", type = "Oscilloscope" }
+7M = { name = "Secondary Freq", type = "Oscilloscope" }
+8M = { name = "Tertiary Freq", type = "Oscilloscope" }
+
+9M = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
+10M = { name = "Resynthesized", type = "Oscilloscope" }
+
+[patches]
+1M0O = [
+    "0M0I",
+]
+2M0O = [
+    "1M0I",
+    "3M0I",
+    "4M0I",
+]
+3M0O = [
+    "1M1I",
+    "5M0I",
+]
+3M1O = [
+    "6M0I",
+    "9M1K",
+]
+3M2O = [
+    "7M0I",
+]
+3M3O = [
+    "8M0I",
+]
+9M0O = [
+    "1M2I",
+    "10M0I",
+]

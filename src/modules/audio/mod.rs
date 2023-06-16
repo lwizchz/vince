@@ -1,7 +1,7 @@
 /*!
 The following audio modules are defined here: `Sampler`, `MultiSampler`,
 `Envelope`, `Gate`, `Compressor`, `Limiter`, `Equalizer`, `Delay`, `Panner`,
-`Fuzz`, `Looper`
+`Fuzz`, `Looper`, `PitchShifter`
 */
 
 pub mod sampler;
@@ -19,3 +19,5 @@ pub mod panner;
 pub mod fuzz;
 
 pub mod looper;
+
+pub mod pitch_shifter;

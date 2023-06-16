@@ -112,6 +112,10 @@ impl Module for AudioOut {
             return vec![];
         }
 
+        if ins[0].is_nan() {
+            return vec![];
+        }
+
         let left = ins[0] * self.knobs[0];
         let right = if ins[1].is_nan() {
             left
