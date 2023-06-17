@@ -12,7 +12,7 @@
     ]}
 
 2M = { type = "FileDecoder", filename = "assets/sounds/organ_reference.wav", knobs = [1.0] }
-3M = { type = "PitchShifter", func = "Simple", knobs = [12.0] }
+3M = { type = "PitchShifter", func = "PhaseVocoder", knobs = [10.0] }
 4M = { name = "Dry", type = "Oscilloscope" }
 5M = { name = "Octave Up", type = "Oscilloscope" }
 
@@ -21,7 +21,19 @@
 8M = { name = "Tertiary Freq", type = "Oscilloscope" }
 
 9M = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
-10M = { name = "Resynthesized", type = "Oscilloscope" }
+10M = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
+11M = { type = "Oscillator", func = "Sine", knobs = [0.0, 440.0, 1.0, 0.0] }
+12M = { type = "Mixer", knobs = [
+        0.33, # Primary resynth
+        0.33, # Secondary resynth
+        0.33, # Tertiary resynth
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ] }
+13M = { name = "Resynthesized", type = "Oscilloscope" }
 
 [patches]
 1M0O = [
@@ -42,11 +54,22 @@
 ]
 3M2O = [
     "7M0I",
+    "10M1K",
 ]
 3M3O = [
     "8M0I",
+    "11M1K",
 ]
 9M0O = [
+    "12M0I",
+]
+10M0O = [
+    "12M1I",
+]
+11M0O = [
+    "12M2I",
+]
+12M0O = [
     "1M2I",
-    "10M0I",
+    "13M0I",
 ]

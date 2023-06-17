@@ -4,7 +4,8 @@ it.
 
 ## Pitch Shift Functions
  * `Simple` - Shifts all frequencies by the given amount, the default
- * `Formant` - Preserves formants while shifting the primary frequency
+ * `PhaseVocoder` - Uses the phase vocoder algorithm to process frequencies
+   more precisely
 
 ## Inputs
 0. The signal to pitch shift
@@ -24,7 +25,7 @@ while the FFT buffer is being populated.
 
 */
 
-use std::cmp::Ordering;
+use std::{cmp::Ordering, f32::consts::PI};
 
 use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
 
@@ -38,7 +39,7 @@ use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, Mo
 enum PitchShifterFunc {
     #[default]
     Simple,
-    Formant,
+    PhaseVocoder,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -142,7 +143,7 @@ impl Module for PitchShifter {
         self.knobs[i] = val;
     }
 
-    fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
+    fn step(&mut self, time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
         let shift = self.knobs[0];
 
         const SR: f32 = 44100.0;
@@ -194,32 +195,35 @@ impl Module for PitchShifter {
                         })
                 });
                 self.bin_energies.reverse();
-                let primary_bin = self.bin_energies[0].0;
 
-                match self.func {
-                    PitchShifterFunc::Simple => {
-                        if shift != 0.0 {
-                            let mut out_buffer = self.out_buffer.drain(..)
-                                .collect::<Vec<Complex<f32>>>();
-                            self.out_buffer = vec![Complex { re: 0.0, im: 0.0 }; PitchShifter::BUFSIZE];
-                            for (bin, v) in out_buffer.drain(..)
-                                .enumerate()
-                            {
-                                let shifted_bin = (bin as f32 * 2.0f32.powf(shift / 12.0)).floor();
-                                if shifted_bin > 0.0 && shifted_bin < self.out_buffer.len() as f32 {
-                                    self.out_buffer[shifted_bin as usize] = v;
-                                }
-                            }
-                        }
-                    },
-                    PitchShifterFunc::Formant => {
-                        let shifted_bin = (primary_bin as f32 * 2.0f32.powf(shift / 12.0)).floor();
-                        let primary = self.out_buffer[primary_bin];
-                        self.out_buffer[primary_bin] = Complex { re: 0.0, im: 0.0 };
+                if shift != 0.0 {
+                    let mut out_buffer = self.out_buffer.drain(..)
+                        .collect::<Vec<Complex<f32>>>();
+                    self.out_buffer = vec![Complex { re: 0.0, im: 0.0 }; PitchShifter::BUFSIZE];
+                    for (bin, v) in out_buffer.drain(..)
+                        .enumerate()
+                    {
+                        let shifted_bin = (bin as f32 * 2.0f32.powf(shift / 12.0)).floor();
                         if shifted_bin > 0.0 && shifted_bin < self.out_buffer.len() as f32 {
-                            self.out_buffer[shifted_bin as usize] = primary;
+                            self.out_buffer[shifted_bin as usize] = match self.func {
+                                PitchShifterFunc::Simple => {
+                                    v
+                                },
+                                PitchShifterFunc::PhaseVocoder => {
+                                    let omega_delta = 2.0 * PI * (shifted_bin - bin as f32)/ PitchShifter::BUFSIZE as f32;
+                                    let phase_shift = Complex {
+                                        re: (omega_delta * time as f32).cos(),
+                                        im: (omega_delta * time as f32).sin(),
+                                    };
+
+                                    Complex {
+                                        re: v.re * phase_shift.re - v.im * phase_shift.im,
+                                        im: v.re * phase_shift.im + v.im * phase_shift.re,
+                                    }
+                                },
+                            };
                         }
-                    },
+                    }
                 }
 
                 let ifft = planner.plan_fft_inverse(PitchShifter::BUFSIZE);

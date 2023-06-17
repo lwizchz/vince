@@ -1,5 +1,5 @@
 [modules]
-0M = { type = "AudioOut", knobs = [0.1] }
+0M = { type = "AudioOut", knobs = [0.025] }
 1M = { type = "Delay", knobs = [0.1, 0.7, 1.0] }
 2M = { type = "Mixer", knobs = [
         0.9, # Feedback
