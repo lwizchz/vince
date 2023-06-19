@@ -23,7 +23,7 @@
 10M = { type = "Envelope" }
 11M = { type = "Scaler", knobs = [100000.0] }
 12M = { type = "Limiter", knobs = [1000.0, inf] }
-13M = { type = "Oscillator", func = "Square", knobs = [0.0, 440.0, 1.0, 0.25]}
+13M = { type = "Oscillator", func = "Square", knobs = [0.0, 440.0, 1.0, 0.25] }
 
 14M = { type = "Mixer", knobs = [
         1.0, # Kick

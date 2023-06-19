@@ -1,0 +1,43 @@
+[info]
+mode = "Video"
+description = "To make this rack work, add your own greenscreen test video at the below path."
+
+[modules]
+0M = { type = "ComponentVideoOut" }
+
+1M = { type = "FileDecoder", filename = "assets/videos/greenscreen.y4m", knobs = [1.0] }
+2M = { type = "ChromaKey", knobs = [0.5] }
+
+3M = { type = "Oscillator", func = "Saw", sync = "Vertical", knobs = [0.0, 100.0, 0.75, 0.0] }
+4M = { type = "Oscillator", func = "Sine", knobs = [0.75, 2000000.0, 0.25, 0.0] }
+5M = { type = "Oscillator", func = "Triangle", knobs = [9000.0, 1.0, 200.0, 0.0] }
+
+[patches]
+1M0O = [
+    "2M0I",
+]
+1M1O = [
+    "2M1I",
+]
+1M2O = [
+    "2M2I",
+]
+2M0O = [
+    "0M0I",
+]
+2M1O = [
+    "0M1I",
+]
+2M2O = [
+    "0M2I",
+]
+3M0O = [
+    "2M4I",
+]
+4M0O = [
+    "2M3I",
+    "3M2K",
+]
+5M0O = [
+    "3M1K",
+]

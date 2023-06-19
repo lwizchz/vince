@@ -179,6 +179,10 @@ impl Module for ComponentVideoOut {
             b = 0.0;
         }
 
+        r = r.clamp(0.0, 1.0);
+        g = g.clamp(0.0, 1.0);
+        b = b.clamp(0.0, 1.0);
+
         if self.rgb.len() > Self::MAX_LEN {
             self.rgb.remove(0);
         }

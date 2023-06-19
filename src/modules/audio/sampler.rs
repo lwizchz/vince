@@ -30,7 +30,7 @@ use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle, utils:
 
 use serde::Deserialize;
 
-use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent, io::file_decoder::FileReader}};
+use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent, io::file_decoder::{FileReader, WavReader}}};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Sampler {
@@ -60,7 +60,7 @@ impl Sampler {
     pub(crate) fn init_readers(&mut self) {
         self.sample_readers = self.samples.iter()
             .map(|(filename, _)| {
-                let mut reader = FileReader::new(filename);
+                let mut reader = FileReader::WavReader(WavReader::new(filename));
                 reader.rewind();
                 reader
             }).collect();

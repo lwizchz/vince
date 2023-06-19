@@ -9,7 +9,7 @@
         0.0,
         0.0,
         0.0,
-    ]}
+    ] }
 
 2M = { type = "FileDecoder", filename = "assets/sounds/organ_reference.wav", knobs = [1.0] }
 3M = { type = "PitchShifter", func = "PhaseVocoder", knobs = [10.0] }

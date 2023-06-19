@@ -3902,7 +3902,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "vince"
-version = "0.3.19"
+version = "0.3.20"
 dependencies = [
  "bevy",
  "bevy_common_assets",
@@ -3920,6 +3920,7 @@ dependencies = [
  "serde",
  "tikv-jemallocator",
  "typetag",
+ "y4m",
 ]
 
 [[package]]
@@ -4459,6 +4460,12 @@ name = "xml-rs"
 version = "0.8.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d8f380ae16a37b30e6a2cf67040608071384b1450c189e61bea3ff57cde922d"
+
+[[package]]
+name = "y4m"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a5a4b21e1a62b67a2970e6831bc091d7b87e119e7f9791aef9702e3bef04448"
 
 [[package]]
 name = "zune-inflate"
