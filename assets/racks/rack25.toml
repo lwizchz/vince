@@ -3,7 +3,7 @@ mode = "Video"
 description = "To make this rack work, add your own greenscreen test video at the below path."
 
 [modules]
-0M = { type = "ComponentVideoOut" }
+0M = { type = "ComponentVideoOut", is_own_window = true }
 
 1M = { type = "FileDecoder", filename = "assets/videos/greenscreen.y4m", knobs = [1.0] }
 2M = { type = "ChromaKey", knobs = [0.5] }

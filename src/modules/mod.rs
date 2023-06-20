@@ -44,12 +44,15 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     fn is_large(&self) -> bool {
         false
     }
-    fn get_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
+    fn is_own_window(&self) -> bool {
+        false
+    }
+    fn get_world_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_main_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
         if let Some(component) = self.component() {
             if let Ok(parent) = q_child.get(component) {
                 if let Ok(pos_screen) = q_transform.get(parent.get()) {
-                    if let Ok(camera) = q_camera.get_single() {
-                        if let Some(pos_world) = camera.0.viewport_to_world(camera.1, pos_screen.translation().truncate()) {
+                    if let Ok(main_camera) = q_main_camera.get_single() {
+                        if let Some(pos_world) = main_camera.0.viewport_to_world(main_camera.1, pos_screen.translation().truncate()) {
                             return Vec3::from((pos_world.origin.truncate(), 0.0))
                                 * Vec3::new(1.0, -1.0, 1.0)
                                 + Vec3::new(0.0, -100.0, 0.0);

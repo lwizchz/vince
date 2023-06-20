@@ -75,7 +75,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use std::{time::Duration, cmp::Ordering};
 use std::env;
 
-use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode}, render::{render_resource::PrimitiveTopology}};
+use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
 
 use bevy_common_assets::toml::TomlAssetPlugin;
 
@@ -116,7 +116,7 @@ fn main() {
         .add_system(rack_reloader.run_if(in_state(AppState::Ready)))
         .add_system(rack_stepper.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(rack_render.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
-        .add_system(rack_keyboard_input.run_if(in_state(AppState::Ready)))
+        .add_system(keyboard_input.run_if(in_state(AppState::Ready)))
         .run();
 }
 
@@ -152,14 +152,16 @@ fn load_rack(mut commands: Commands, asset_server: Res<AssetServer>, mut setting
 fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>, mut state: ResMut<NextState<AppState>>, mut q_window: Query<&mut Window, With<PrimaryWindow>>, mut exit: EventWriter<AppExit>) {
     if let Some(rack) = racks.get_mut(&h_rack.0) {
         // Init rack info
+        let rack_path = if let Some(rack_path) = env::args().nth(1) {
+            rack_path
+        } else {
+            "racks/rack0.toml".to_string()
+        };
+        let mut window_title = format!("Vince Audio-Video Synth - {rack_path}");
         if let Some(name) = rack.info.get("name") {
-            let rack_path = if let Some(rack_path) = env::args().nth(1) {
-                rack_path
-            } else {
-                "racks/rack0.toml".to_string()
-            };
             if let Ok(mut window) = q_window.get_single_mut() {
                 window.title = format!("Vince Audio-Video Synth - {name} - {rack_path}");
+                window_title = window.title.clone();
             }
         }
         if !rack.info.is_empty() {
@@ -195,21 +197,24 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
                 ..default()
             },
         );
+        let mut sorted_modules = rack.modules.iter_mut().collect::<Vec<(&ModuleKey, &mut Box<dyn Module>)>>();
+        sorted_modules.sort_by(|a, b| {
+            if a.0.id == usize::MAX {
+                Ordering::Less
+            } else if b.0.id == usize::MAX {
+                Ordering::Greater
+            } else {
+                a.0.cmp(b.0)
+            }
+        });
         component.with_children(|parent| {
-            let mut sorted_modules = rack.modules.iter_mut().collect::<Vec<(&ModuleKey, &mut Box<dyn Module>)>>();
-            sorted_modules.sort_by(|a, b| {
-                if a.0.id == usize::MAX {
-                    Ordering::Less
-                } else if b.0.id == usize::MAX {
-                    Ordering::Greater
-                } else {
-                    a.0.cmp(b.0)
+            for m in &mut sorted_modules {
+                if m.1.is_own_window() {
+                    continue;
                 }
-            });
-            for m in sorted_modules {
-                let id = m.0.id;
+
                 m.1.init(
-                    id,
+                    m.0.id,
                     parent.spawn((
                         NodeBundle {
                             style: Style {
@@ -242,6 +247,93 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
             }
         });
 
+        // Init modules which have their own window
+        for m in &mut sorted_modules {
+            if m.1.is_own_window() {
+                let mname = m.1.name()
+                    .unwrap_or_else(|| {
+                        format!("{:?}", m.1)
+                            .split_whitespace()
+                            .next()
+                            .unwrap()
+                            .to_string()
+                    });
+                let child_window = commands.spawn(
+                    Window {
+                        title: format!("{} - {}", window_title, mname),
+                        resolution: if m.1.is_large() {
+                            WindowResolution::new(640.0, 480.0)
+                        } else {
+                            WindowResolution::new(150.0, 100.0)
+                        },
+                        // resizable: false,
+                        present_mode: PresentMode::AutoNoVsync,
+                        ..default()
+                    }
+                ).id();
+                let _child_camera = commands.spawn((
+                    Camera2dBundle {
+                        camera: Camera {
+                            target: RenderTarget::Window(WindowRef::Entity(child_window)),
+                            ..default()
+                        },
+                        transform: Transform::from_xyz(640.0*m.0.id as f32, 1080.0*2.0, 0.0),
+                        projection: OrthographicProjection {
+                            scaling_mode: if m.1.is_large() {
+                                ScalingMode::Fixed {
+                                    width: 640.0,
+                                    height: 480.0,
+                                }
+                            } else {
+                                ScalingMode::Fixed {
+                                    width: 150.0,
+                                    height: 100.0,
+                                }
+                            },
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    UiCameraConfig {
+                        show_ui: false,
+                    },
+                    CameraComponent,
+                ));
+
+                m.1.init(
+                    m.0.id,
+                    commands.entity(child_window).commands().spawn((
+                        NodeBundle {
+                            style: Style {
+                                size: if m.1.is_large() {
+                                    Size {
+                                        width: Val::Px(660.0),
+                                        height: Val::Px(550.0),
+                                    }
+                                } else {
+                                    Size {
+                                        width: Val::Px(170.0),
+                                        height: Val::Px(200.0),
+                                    }
+                                },
+                                margin: UiRect::all(Val::Px(5.0)),
+                                padding: UiRect::all(Val::Px(10.0)),
+                                overflow: Overflow::Hidden,
+                                ..default()
+                            },
+                            background_color: Color::DARK_GRAY.into(),
+                            ..default()
+                        },
+                        TopModuleComponent,
+                    )),
+                    &mut images,
+                    &mut meshes,
+                    &mut materials,
+                    ts.clone(),
+                );
+            }
+        }
+
         // Setup audio
         rack.init_audio();
 
@@ -257,7 +349,7 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
         exit.send(AppExit);
     }
 }
-fn setup_patches(mut commands: Commands, racks: Res<Assets<Rack>>, h_rack: ResMut<RackHandle>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>, q_camera: Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>, mut state: ResMut<NextState<AppState>>) {
+fn setup_patches(mut commands: Commands, racks: Res<Assets<Rack>>, h_rack: ResMut<RackHandle>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>, q_main_camera: Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>, mut state: ResMut<NextState<AppState>>) {
     if let Some(rack) = racks.get(&h_rack.0) {
         // Patch cables
         let colors = [
@@ -281,8 +373,8 @@ fn setup_patches(mut commands: Commands, racks: Res<Assets<Rack>>, h_rack: ResMu
             };
             if let Some(mout) = rack.modules.get(&mout_id) {
                 if let Some(min) = rack.modules.get(&min_id) {
-                    let startpos = mout.get_pos(&q_child, &q_transform, &q_camera) + Vec3::new(50.0, 0.0, 0.0);
-                    let endpos = min.get_pos(&q_child, &q_transform, &q_camera) + Vec3::new(-50.0, 0.0, 0.0);
+                    let startpos = mout.get_world_pos(&q_child, &q_transform, &q_main_camera) + Vec3::new(50.0, 0.0, 0.0);
+                    let endpos = min.get_world_pos(&q_child, &q_transform, &q_main_camera) + Vec3::new(-50.0, 0.0, 0.0);
                     let mut bottom = (startpos.y+endpos.y)/2.0;
                     bottom = bottom.min(startpos.y).min(endpos.y);
                     let midpos = Vec3::new((startpos.x+endpos.x)/2.0, bottom - 50.0 - 5.0 * i as f32, 0.0);
@@ -414,9 +506,23 @@ fn rack_render(mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>
         rack.render(&mut images, &mut meshes, &mut q_text, &mut q_image, &mut q_mesh);
     }
 }
-fn rack_keyboard_input(keys: Res<Input<KeyCode>>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut<RackHandle>, mut exit: EventWriter<AppExit>) {
+fn keyboard_input(keys: Res<Input<KeyCode>>, mut racks: ResMut<Assets<Rack>>, h_rack: ResMut<RackHandle>, mut q_windows: Query<&mut Window>, mut exit: EventWriter<AppExit>) {
     if let Some(rack) = racks.get_mut(&h_rack.0) {
-        if keys.just_released(KeyCode::Escape) {
+        if keys.just_released(KeyCode::F11) {
+            for mut window in &mut q_windows {
+                if window.focused {
+                    match window.mode {
+                        WindowMode::Windowed => {
+                            window.mode = WindowMode::BorderlessFullscreen;
+                        },
+                        _ => {
+                            window.mode = WindowMode::Windowed;
+                        },
+                    }
+                    break;
+                }
+            }
+        } else if keys.just_released(KeyCode::Escape) {
             rack.exit();
             exit.send(AppExit);
         }

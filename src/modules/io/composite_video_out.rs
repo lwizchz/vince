@@ -41,6 +41,9 @@ pub struct CompositeVideoOut {
     luma: VecDeque<(f64, f32)>,
     #[serde(skip)]
     chroma: VecDeque<(f64, f32)>,
+
+    #[serde(default)]
+    is_own_window: bool,
 }
 impl CompositeVideoOut {
     pub const WIDTH: usize = 80;
@@ -112,7 +115,7 @@ impl Module for CompositeVideoOut {
                                 ),
                                 ..default()
                             },
-                            image: UiImage::new(image_handle),
+                            image: UiImage::new(image_handle.clone()),
                             ..default()
                         },
                         ModuleImageComponent,
@@ -121,11 +124,28 @@ impl Module for CompositeVideoOut {
             });
             self.component = Some(component.id());
         });
+
+        if self.is_own_window() {
+            ec.commands().spawn(
+                SpriteBundle {
+                    texture: image_handle,
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(640.0, 480.0)),
+                        ..default()
+                    },
+                    transform: Transform::from_xyz(640.0*id as f32, 1080.0*2.0, 0.0),
+                    ..default()
+                }
+            );
+        }
     }
     fn is_large(&self) -> bool {
         true
     }
-    fn get_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
+    fn is_own_window(&self) -> bool {
+        self.is_own_window
+    }
+    fn get_world_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
         if let Some(component) = self.component() {
             if let Ok(parent) = q_child.get(component) {
                 if let Ok(pos_screen) = q_transform.get(parent.get()) {

@@ -91,12 +91,21 @@ impl Module for Luma {
     }
 
     fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
-        let er = ins[0];
-        let eg = ins[1];
-        let eb = ins[2];
+        let mut er = ins[0];
+        let mut eg = ins[1];
+        let mut eb = ins[2];
 
-        if er.is_nan() || eg.is_nan() || eb.is_nan() {
+        if er.is_nan() && eg.is_nan() && eb.is_nan() {
             return vec![f32::NAN];
+        }
+        if er.is_nan() {
+            er = 0.0;
+        }
+        if eg.is_nan() {
+            eg = 0.0;
+        }
+        if eb.is_nan() {
+            eb = 0.0;
         }
 
         let ey = 0.30 * er + 0.59 * eg + 0.11 * eb;
