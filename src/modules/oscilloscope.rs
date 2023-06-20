@@ -46,6 +46,9 @@ pub struct Oscilloscope {
     vals: [VecDeque<(f64, f32)>; Oscilloscope::MAX_GRAPHS],
     #[serde(skip)]
     cycles: [usize; Oscilloscope::MAX_GRAPHS],
+
+    #[serde(default)]
+    is_own_window: bool,
 }
 impl Oscilloscope {
     const WIDTH: usize = 150;
@@ -216,7 +219,7 @@ impl Module for Oscilloscope {
                                 ),
                                 ..default()
                             },
-                            image: UiImage::new(image_handle),
+                            image: UiImage::new(image_handle.clone()),
                             ..default()
                         },
                         ModuleImageComponent,
@@ -226,9 +229,26 @@ impl Module for Oscilloscope {
             self.component = Some(component.id());
         });
 
+        if self.is_own_window() {
+            ec.commands().spawn(
+                SpriteBundle {
+                    texture: image_handle,
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(150.0, 100.0)),
+                        ..default()
+                    },
+                    transform: Transform::from_xyz(640.0*id as f32, 1080.0*2.0, 0.0),
+                    ..default()
+                }
+            );
+        }
+
         self.vals = vec![VecDeque::with_capacity(512); Oscilloscope::MAX_GRAPHS]
             .try_into()
             .unwrap();
+    }
+    fn is_own_window(&self) -> bool {
+        self.is_own_window
     }
 
     fn id(&self) -> Option<usize> {
