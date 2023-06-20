@@ -1,9 +1,12 @@
 /*!
-The `Oscilloscope` module takes an input and displays it as a graph of values
-over time.
+The `Oscilloscope` module takes up to 4 inputs and displays them as graphs of
+values over time.
 
 ## Inputs
-0. The signal to graph
+0. The first signal to graph
+1. The second signal to graph
+2. The third signal to graph
+3. The fourth signal to graph
 
 ## Outputs
 None
@@ -31,59 +34,66 @@ pub struct Oscilloscope {
     #[serde(skip)]
     component: Option<Entity>,
     #[serde(skip)]
-    mesh: Option<Entity>,
+    mesh: Option<[Entity; Oscilloscope::MAX_GRAPHS]>,
     #[serde(skip)]
     children: Vec<Entity>,
 
     #[serde(skip)]
     max_t: f64,
     #[serde(skip)]
-    max_val: f32,
+    max_val: [f32; Oscilloscope::MAX_GRAPHS],
     #[serde(skip)]
-    vals: VecDeque<(f64, f32)>,
+    vals: [VecDeque<(f64, f32)>; Oscilloscope::MAX_GRAPHS],
     #[serde(skip)]
-    cycles: usize,
+    cycles: [usize; Oscilloscope::MAX_GRAPHS],
 }
 impl Oscilloscope {
     const WIDTH: usize = 150;
     const HEIGHT: usize = 100;
     const MAX_LEN: usize = 2048;
+    const MAX_GRAPHS: usize = 4;
 
-    fn gen_points(&mut self) -> Vec<Vec3> {
-        match self.vals.front() {
-            Some((t0, _)) => {
-                if self.max_val > 0.0 {
-                    self.max_val /= 1.05;
-                }
+    fn gen_points(&mut self) -> [Vec<Vec3>; Oscilloscope::MAX_GRAPHS] {
+        let mut points: [Vec<Vec3>; Oscilloscope::MAX_GRAPHS] = vec![vec![]; Oscilloscope::MAX_GRAPHS]
+            .try_into()
+            .unwrap();
+        for i in 0..Oscilloscope::MAX_GRAPHS {
+            match self.vals[i].front() {
+                Some((t0, _)) => {
+                    if self.max_val[i] > 0.0 {
+                        self.max_val[i] /= 1.05;
+                    }
 
-                let (mut max_t, mut max_val) = self.vals.iter()
-                    .fold((0.0f64, 0.0f32), |mut a, (t, v)| {
-                        if *t > a.0 {
-                            a.0 = *t;
-                        }
-                        if v.abs() > a.1 {
-                            a.1 = v.abs();
-                        }
-                        a
-                    });
-                if self.max_t > max_t {
-                    max_t = self.max_t;
-                }
-                if self.max_val > max_val {
-                    max_val = self.max_val;
-                }
-                self.max_t = max_t;
-                self.max_val = max_val;
+                    let (mut max_t, mut max_val) = self.vals[i].iter()
+                        .fold((0.0f64, 0.0f32), |mut a, (t, v)| {
+                            if *t > a.0 {
+                                a.0 = *t;
+                            }
+                            if v.abs() > a.1 {
+                                a.1 = v.abs();
+                            }
+                            a
+                        });
+                    if self.max_t > max_t {
+                        max_t = self.max_t;
+                    }
+                    if self.max_val[i] > max_val {
+                        max_val = self.max_val[i];
+                    }
+                    self.max_t = max_t;
+                    self.max_val[i] = max_val;
 
-                self.vals.iter()
-                    .map(|(t, v)| Vec3 {
-                        x: ((t - t0) * f64::from(Self::WIDTH as u16) / (max_t - t0)) as f32,
-                        y: v * f32::from(Self::HEIGHT as u16) / max_val,
-                        z: 0.0,
-                    }).collect::<Vec<Vec3>>()
-            },
-            None => vec![],
+                    points[i] = self.vals[i].iter()
+                        .map(|(t, v)| Vec3 {
+                            x: ((t - t0) * f64::from(Self::WIDTH as u16) / (max_t - t0)) as f32,
+                            y: v * f32::from(Self::HEIGHT as u16) / max_val,
+                            z: 0.0,
+                        }).collect::<Vec<Vec3>>();
+                },
+                None => {},
+            }
         }
+        points
     }
 }
 #[typetag::deserialize]
@@ -113,23 +123,40 @@ impl Module for Oscilloscope {
         let image_handle = images.add(image);
 
         let layer = RenderLayers::layer(((id+1) % 255) as u8);
-        let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.gen_points());
-        self.mesh = Some(ec.commands().spawn((
-            MaterialMesh2dBundle {
-                mesh: Mesh2dHandle(meshes.add(mesh)),
-                material: materials.add(ColorMaterial::from(Color::GREEN)),
-                transform: Transform::from_xyz(-f32::from(Self::WIDTH as u16)/2.0, 0.0, 0.0)
-                    .with_scale(Vec3 {
-                        x: 1.0,
-                        y: 0.5,
-                        z: 1.0,
-                    }),
-                ..default()
-            },
-            ModuleMeshComponent,
-            layer,
-        )).id());
+        let mut mesh: [Mesh; Oscilloscope::MAX_GRAPHS] = vec![Mesh::new(PrimitiveTopology::LineStrip); Oscilloscope::MAX_GRAPHS]
+            .try_into()
+            .unwrap();
+        for (i, gen_points) in self.gen_points().into_iter().enumerate() {
+            mesh[i].insert_attribute(Mesh::ATTRIBUTE_POSITION, gen_points);
+        }
+        let colors = [
+            Color::GREEN,
+            Color::RED,
+            Color::YELLOW,
+            Color::BLUE,
+        ];
+        self.mesh = Some(
+            mesh.into_iter().enumerate()
+                .map(|(i, mesh)| {
+                    ec.commands().spawn((
+                        MaterialMesh2dBundle {
+                            mesh: Mesh2dHandle(meshes.add(mesh)),
+                            material: materials.add(ColorMaterial::from(colors[i])),
+                            transform: Transform::from_xyz(-f32::from(Self::WIDTH as u16)/2.0, 0.0, 0.0)
+                                .with_scale(Vec3 {
+                                    x: 1.0,
+                                    y: 0.5,
+                                    z: 1.0,
+                                }),
+                            ..default()
+                        },
+                        ModuleMeshComponent,
+                        layer,
+                    )).id()
+                }).collect::<Vec<Entity>>()
+                .try_into()
+                .unwrap()
+        );
         ec.commands().spawn((
             Camera2dBundle {
                 camera_2d: Camera2d {
@@ -170,7 +197,7 @@ impl Module for Oscilloscope {
                     parent.spawn((
                         TextBundle::from_sections([
                             TextSection::new(name, ts.clone()),
-                            TextSection::new("Level\n", ts.clone()),
+                            TextSection::new("Average\n", ts.clone()),
                             TextSection::new("Max\n", ts),
                         ]),
                         ModuleTextComponent,
@@ -199,7 +226,9 @@ impl Module for Oscilloscope {
             self.component = Some(component.id());
         });
 
-        self.vals = VecDeque::with_capacity(512);
+        self.vals = vec![VecDeque::with_capacity(512); Oscilloscope::MAX_GRAPHS]
+            .try_into()
+            .unwrap();
     }
 
     fn id(&self) -> Option<usize> {
@@ -213,7 +242,7 @@ impl Module for Oscilloscope {
     }
 
     fn inputs(&self) -> usize {
-        1
+        Oscilloscope::MAX_GRAPHS
     }
     fn outputs(&self) -> usize {
         0
@@ -227,35 +256,53 @@ impl Module for Oscilloscope {
             return vec![];
         }
 
-        let val = ins[0];
-
-        if !self.vals.is_empty() && val.signum() != self.vals.iter().last().unwrap().1.signum() {
-            self.cycles += 1;
+        for (i, val) in ins.iter().enumerate() {
+            if !self.vals[i].is_empty() && val.signum() != self.vals[i].iter().last().unwrap().1.signum() {
+                self.cycles[i] += 1;
+            }
+            if self.cycles[i] >= 14 {
+                self.vals[i].pop_front();
+                self.cycles[i] -= 1;
+            } else if self.vals[i].len() > Self::MAX_LEN {
+                self.vals[i].pop_front();
+            }
+            self.vals[i].push_back((time, *val));
         }
-        if self.cycles >= 14 {
-            self.vals.pop_front();
-            self.cycles -= 1;
-        } else if self.vals.len() > Self::MAX_LEN {
-            self.vals.pop_front();
-        }
-        self.vals.push_back((time, val));
 
         vec![]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
             if let Ok(mut text) = q_text.get_mut(*component) {
-                let val = self.vals.back().unwrap_or(&(0.0, 0.0));
-                text.sections[1].value = format!("Level: {:+}\n", val.1);
-                text.sections[2].value = format!("Max: {}\n", self.max_val);
+                let avg = self.vals.iter().map(|vals| {
+                    vals.back().unwrap_or(&(0.0, f32::NAN)).1
+                }).fold(0.0f32, |a, v| {
+                    if !v.is_nan() {
+                        a + v
+                    } else {
+                        a
+                    }
+                }) / Oscilloscope::MAX_GRAPHS as f32;
+                let max = self.max_val.iter()
+                    .fold(0.0f32, |a, m| {
+                        if !m.is_nan() && *m > a {
+                            *m
+                        } else {
+                            a
+                        }
+                    });
+                text.sections[1].value = format!("Average: {:+}\n", avg);
+                text.sections[2].value = format!("Max: {}\n", max);
             }
         }
 
-        if let Some(component) = self.mesh {
-            if let Ok(h_mesh) = q_mesh.get_mut(component) {
-                if let Some(mesh) = meshes.get_mut(&h_mesh.0) {
-                    if let Some(attr) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
-                        *attr = self.gen_points().into();
+        for (i, gen_points) in self.gen_points().into_iter().enumerate() {
+            if let Some(component) = self.mesh {
+                if let Ok(h_mesh) = q_mesh.get_mut(component[i]) {
+                    if let Some(mesh) = meshes.get_mut(&h_mesh.0) {
+                        if let Some(attr) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
+                            *attr = gen_points.into();
+                        }
                     }
                 }
             }

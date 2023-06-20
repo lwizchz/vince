@@ -225,7 +225,7 @@ impl Module for VideoIn {
                 if let Some(screen) = screen {
                     if let Ok(mut images) = screen.images.try_lock() {
                         for image in images.drain(..) {
-                            if self.video_buffer.is_empty() {
+                            if self.video_buffer.len() < image.bgra().len() {
                                 self.video_buffer.extend(image.bgra());
                             }
                         }
@@ -236,7 +236,7 @@ impl Module for VideoIn {
                 if let Some(camera) = camera {
                     if let Ok(mut images) = camera.images.try_lock() {
                         for image in images.drain(..) {
-                            if self.video_buffer.is_empty() {
+                            if self.video_buffer.len() < image.len() {
                                 self.video_buffer.extend(
                                     image.enumerate_pixels()
                                         .filter_map(|(x, y, p)| {
