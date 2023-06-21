@@ -158,8 +158,8 @@ impl Y4mReader {
                         let y = y as f32 / 255.0;
 
                         let j = js[i];
-                        let u = us[j] as f32 / 128.0 - 1.0;
-                        let v = vs[j] as f32 / 128.0 - 1.0;
+                        let u = us[j] as f32 / 127.5 - 1.0;
+                        let v = vs[j] as f32 / 127.5 - 1.0;
 
                         // Standard YUV conversion
                         let r = y + 1.140*v;

@@ -108,7 +108,7 @@ impl Module for Luma {
             eb = 0.0;
         }
 
-        let ey = 0.30 * er + 0.59 * eg + 0.11 * eb;
+        let ey = 0.299 * er + 0.587 * eg + 0.114 * eb;
 
         vec![ey]
     }
