@@ -22,7 +22,7 @@ use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::{Mesh2dHandle, Mat
 
 use serde::Deserialize;
 
-use crate::{StepType, CameraComponent, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
+use crate::{StepType, CameraComponent, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent, ModuleImageWindowComponent}};
 
 #[derive(Default, Deserialize, Debug, Clone)]
 pub struct Oscilloscope {
@@ -230,7 +230,7 @@ impl Module for Oscilloscope {
         });
 
         if self.is_own_window() {
-            ec.commands().spawn(
+            ec.commands().spawn((
                 SpriteBundle {
                     texture: image_handle,
                     sprite: Sprite {
@@ -239,8 +239,9 @@ impl Module for Oscilloscope {
                     },
                     transform: Transform::from_xyz(640.0*id as f32, 1080.0*2.0, 0.0),
                     ..default()
-                }
-            );
+                },
+                ModuleImageWindowComponent,
+            ));
         }
 
         self.vals = vec![VecDeque::with_capacity(512); Oscilloscope::MAX_GRAPHS]

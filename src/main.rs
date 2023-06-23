@@ -57,7 +57,7 @@ example.
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 #![feature(iter_array_chunks)]
-#![feature(drain_filter)]
+#![feature(extract_if)]
 #![feature(path_file_prefix)]
 
 #![deny(rust_2018_idioms)]
@@ -75,7 +75,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use std::{time::Duration, cmp::Ordering};
 use std::env;
 
-use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
+use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
 
 use bevy_common_assets::toml::TomlAssetPlugin;
 
@@ -86,7 +86,7 @@ pub mod patch;
 use patch::PatchComponent;
 
 pub mod modules;
-use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent, ModuleKey, ModuleIOK};
+use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent, ModuleImageWindowComponent, ModuleKey, ModuleIOK};
 
 const FRAME_RATE: u16 = 60;
 
@@ -100,8 +100,6 @@ fn main() {
         }).set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Vince Audio-Video Synth".to_string(),
-                resolution: WindowResolution::new(1920.0, 1080.0),
-                resizable: false,
                 present_mode: PresentMode::AutoNoVsync,
                 ..default()
             }),
@@ -117,6 +115,7 @@ fn main() {
         .add_system(rack_stepper.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(rack_render.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(keyboard_input.run_if(in_state(AppState::Ready)))
+        .add_system(window_resize.run_if(in_state(AppState::Ready)))
         .run();
 }
 
@@ -266,7 +265,6 @@ fn setup(mut commands: Commands, h_rack: ResMut<RackHandle>, mut racks: ResMut<A
                         } else {
                             WindowResolution::new(150.0, 100.0)
                         },
-                        // resizable: false,
                         present_mode: PresentMode::AutoNoVsync,
                         ..default()
                     }
@@ -409,7 +407,7 @@ fn setup_patches(mut commands: Commands, racks: Res<Assets<Rack>>, h_rack: ResMu
     }
 }
 
-fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Rack>>, racks: Res<Assets<Rack>>, h_rack: ResMut<RackHandle>, mut state: ResMut<NextState<AppState>>, query: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<PatchComponent>)>>) {
+fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Rack>>, racks: Res<Assets<Rack>>, h_rack: ResMut<RackHandle>, mut state: ResMut<NextState<AppState>>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, q_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>) {
     for ev in ev_asset.iter() {
         if let AssetEvent::Modified { handle } = ev {
             if handle == &h_rack.0 {
@@ -424,11 +422,18 @@ fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Ra
                             _ => {},
                         }
 
-                        for ent in &query {
+                        for ent in &q_any {
                             if let Some(ent) = commands.get_entity(ent) {
                                 ent.despawn_recursive();
                             }
                         }
+
+                        for window in &q_windows {
+                            if let Some(window) = commands.get_entity(window) {
+                                window.despawn_recursive();
+                            }
+                        }
+
                         state.set(AppState::Loading);
                     }
                 }
@@ -525,6 +530,28 @@ fn keyboard_input(keys: Res<Input<KeyCode>>, mut racks: ResMut<Assets<Rack>>, h_
         } else if keys.just_released(KeyCode::Escape) {
             rack.exit();
             exit.send(AppExit);
+        }
+    }
+}
+fn window_resize(mut commands: Commands, mut ev_resize: EventReader<WindowResized>, q_windows: Query<&PrimaryWindow>, q_patches: Query<Entity, With<PatchComponent>>, mut state: ResMut<NextState<AppState>>) {
+    for ev in ev_resize.iter() {
+        match ev {
+            WindowResized { window, width: _, height: _ } => {
+                if let Ok(_) = q_windows.get(*window) {
+                    match &state.0 {
+                        Some(state) if state == &AppState::Loaded => return,
+                        _ => {},
+                    }
+
+                    for patch in &q_patches {
+                        if let Some(patch) = commands.get_entity(patch) {
+                            patch.despawn_recursive();
+                        }
+                    }
+
+                    state.set(AppState::Loaded);
+                }
+            },
         }
     }
 }

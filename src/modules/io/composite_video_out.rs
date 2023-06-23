@@ -21,7 +21,7 @@ use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::Mesh2dHandle, rend
 
 use serde::Deserialize;
 
-use crate::{StepType, MainCameraComponent, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
+use crate::{StepType, MainCameraComponent, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent, ModuleImageWindowComponent}};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct CompositeVideoOut {
@@ -126,7 +126,7 @@ impl Module for CompositeVideoOut {
         });
 
         if self.is_own_window() {
-            ec.commands().spawn(
+            ec.commands().spawn((
                 SpriteBundle {
                     texture: image_handle,
                     sprite: Sprite {
@@ -135,8 +135,9 @@ impl Module for CompositeVideoOut {
                     },
                     transform: Transform::from_xyz(640.0*id as f32, 1080.0*2.0, 0.0),
                     ..default()
-                }
-            );
+                },
+                ModuleImageWindowComponent,
+            ));
         }
     }
     fn is_large(&self) -> bool {

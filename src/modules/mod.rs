@@ -111,6 +111,8 @@ pub struct ModuleTextComponent;
 pub struct ModuleMeshComponent;
 #[derive(Component, Debug, Clone)]
 pub struct ModuleImageComponent;
+#[derive(Component, Debug, Clone)]
+pub struct ModuleImageWindowComponent;
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ModuleIOK {
