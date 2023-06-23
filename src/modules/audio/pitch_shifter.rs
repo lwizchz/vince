@@ -115,6 +115,11 @@ impl Module for PitchShifter {
                 (-0.5 * ((n as f32 - PitchShifter::BUFSIZE as f32 / 2.0) / (SIGMA * PitchShifter::BUFSIZE as f32 / 2.0)).powi(2)).exp()
             }).collect();
     }
+    fn exit(&mut self) {
+        self.id = None;
+        self.component = None;
+        self.children = vec![];
+    }
 
     fn id(&self) -> Option<usize> {
         self.id

@@ -327,7 +327,10 @@ impl Rack {
         for m in self.modules.values_mut() {
             m.exit();
         }
+
+        self.audio_context = None;
+        self.outs.clear();
     }
 }
 #[derive(Resource, Debug, Clone)]
-pub struct RackHandle(pub Handle<Rack>);
+pub struct RackHandles(pub Vec<Handle<Rack>>);

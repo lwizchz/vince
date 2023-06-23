@@ -271,6 +271,10 @@ impl Module for FileEncoder {
         if let Some(writer) = &mut self.writer {
             writer.finalize().unwrap();
         }
+
+        self.id = None;
+        self.component = None;
+        self.children = vec![];
     }
 
     fn id(&self) -> Option<usize> {

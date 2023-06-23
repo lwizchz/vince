@@ -73,6 +73,11 @@ impl Module for AudioIn {
             self.component = Some(component.id());
         });
     }
+    fn exit(&mut self) {
+        self.id = None;
+        self.component = None;
+        self.children = vec![];
+    }
 
     fn id(&self) -> Option<usize> {
         self.id

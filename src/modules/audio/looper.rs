@@ -79,6 +79,11 @@ impl Module for Looper {
         let d = (duration * 44100.0) as usize;
         self.buffer = Vec::with_capacity(d);
     }
+    fn exit(&mut self) {
+        self.id = None;
+        self.component = None;
+        self.children = vec![];
+    }
 
     fn id(&self) -> Option<usize> {
         self.id

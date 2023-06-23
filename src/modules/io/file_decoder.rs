@@ -326,6 +326,11 @@ impl Module for FileDecoder {
             self.init_reader()
         }
     }
+    fn exit(&mut self) {
+        self.id = None;
+        self.component = None;
+        self.children = vec![];
+    }
 
     fn id(&self) -> Option<usize> {
         self.id

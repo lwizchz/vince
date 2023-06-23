@@ -139,6 +139,12 @@ impl Module for ComponentVideoOut {
             ));
         }
     }
+    fn exit(&mut self) {
+        self.id = None;
+        self.component = None;
+        self.children = vec![];
+    }
+
     fn is_large(&self) -> bool {
         true
     }

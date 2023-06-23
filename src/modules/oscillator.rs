@@ -35,10 +35,6 @@ use serde::Deserialize;
 
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent, component_video_out::ComponentVideoOut}};
 
-const fn _default_true() -> bool {
-    true
-}
-
 #[derive(Default, Deserialize, Debug, Clone)]
 enum OscillatorFunc {
     #[default]
@@ -114,6 +110,11 @@ impl Module for Oscillator {
             });
             self.component = Some(component.id());
         });
+    }
+    fn exit(&mut self) {
+        self.id = None;
+        self.component = None;
+        self.children = vec![];
     }
 
     fn id(&self) -> Option<usize> {

@@ -145,6 +145,11 @@ impl Module for MidiIn {
             self.controllers.insert(u7::from(8), u7::from(0));
         }
     }
+    fn exit(&mut self) {
+        self.id = None;
+        self.component = None;
+        self.children = vec![];
+    }
 
     fn id(&self) -> Option<usize> {
         self.id

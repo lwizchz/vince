@@ -14,7 +14,7 @@ which are used to adjust module-specific parameters such as gain or speed.
 It is recommended to run in release mode but it's no longer required.
 
 ```
-$ cargo run --release racks/rack0.toml
+$ cargo run --release racks/
 ```
 
 # Racks

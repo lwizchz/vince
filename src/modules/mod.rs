@@ -37,7 +37,8 @@ pub mod video;
 #[typetag::deserialize(tag = "type")]
 pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     fn init(&mut self, id: usize, ec: EntityCommands, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle);
-    fn exit(&mut self) {}
+    fn exit(&mut self);
+
     fn is_init(&self) -> bool {
         self.id().is_some()
     }

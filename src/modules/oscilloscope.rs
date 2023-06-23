@@ -248,6 +248,12 @@ impl Module for Oscilloscope {
             .try_into()
             .unwrap();
     }
+    fn exit(&mut self) {
+        self.id = None;
+        self.component = None;
+        self.mesh = None;
+        self.children = vec![];
+    }
     fn is_own_window(&self) -> bool {
         self.is_own_window
     }
