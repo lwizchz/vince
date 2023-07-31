@@ -1,0 +1,25 @@
+[info]
+mode = "Video"
+
+[modules]
+0M = { type = "AudioOut", knobs = [0.1] }
+1M = { type = "CompositeVideoOut" }
+
+2M = { type = "Conway", density = 0.25, knobs = [0.0, 0.2, 1.0, 0.6] }
+3M = { type = "Sequencer", notes = [
+        [1.0, 1.0, 1.0],
+        [nan, 0.0, 1.0],
+    ], knobs = [100.0] }
+4M = { type = "Limiter", knobs = [0.0, 1.0] }
+
+[patches]
+2M0O = [
+    "0M0I",
+    "1M0I",
+]
+3M2O = [
+    "4M0I",
+]
+4M0O = [
+    "2M0I",
+]

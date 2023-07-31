@@ -143,6 +143,8 @@ impl Module for ComponentVideoOut {
         self.id = None;
         self.component = None;
         self.children = vec![];
+
+        self.scan = 0;
     }
 
     fn is_large(&self) -> bool {

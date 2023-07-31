@@ -144,6 +144,8 @@ impl Module for CompositeVideoOut {
         self.id = None;
         self.component = None;
         self.children = vec![];
+
+        self.scan = 0;
     }
 
     fn is_large(&self) -> bool {
