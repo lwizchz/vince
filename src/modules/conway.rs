@@ -69,10 +69,10 @@ impl Conway {
             .collect::<Vec<u8>>();
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed(seed[..32].try_into().unwrap());
         let mut grid = [[Cell::Dead; ComponentVideoOut::WIDTH]; ComponentVideoOut::HEIGHT];
-        for j in 0..ComponentVideoOut::HEIGHT {
-            for i in 0..ComponentVideoOut::WIDTH {
+        for row in &mut grid {
+            for col in row {
                 if rng.gen_bool(self.density) {
-                    grid[j][i] = Cell::Alive;
+                    *col = Cell::Alive;
                 }
             }
         }

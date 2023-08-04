@@ -192,5 +192,5 @@ fn get_freq(k: KeyCode, octave: f32) -> f32 {
         key_order
     };
 
-    440.0 * 2.0f32.powf(octave as f32 + key_order[&k] as f32 / 12.0)
+    440.0 * 2.0f32.powf(octave + key_order[&k] as f32 / 12.0)
 }

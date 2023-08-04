@@ -110,7 +110,7 @@ impl Module for MultiMixer {
 
     fn step(&mut self, _time: f64, _st: StepType, ins: &[f32]) -> Vec<f32> {
         vec![
-            ins.iter()
+            self.knobs[0] * ins.iter()
                 .map(|inp| {
                     if inp.is_nan() {
                         0.0
@@ -118,7 +118,6 @@ impl Module for MultiMixer {
                         *inp
                     }
                 }).sum::<f32>()
-            * self.knobs[0]
         ]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {

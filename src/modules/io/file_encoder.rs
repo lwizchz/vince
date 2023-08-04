@@ -191,11 +191,11 @@ impl FileWriter {
         match self {
             FileWriter::WavWriter(writer) => {
                 writer.finalize()
-                    .map_err(|e| FileWriterError::HoundError(e))
+                    .map_err(FileWriterError::HoundError)
             },
             FileWriter::Y4mWriter(writer) => {
                 writer.finalize()
-                    .map_err(|e| FileWriterError::Y4mError(e))
+                    .map_err(FileWriterError::Y4mError)
             },
         }
     }

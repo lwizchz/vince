@@ -186,7 +186,7 @@ impl Module for PitchShifter {
                     .map(|(i, v)| (i, v.norm()))
                     .collect();
                 self.bin_energies.sort_by(|(_, a), (_, b)| {
-                    a.partial_cmp(&b)
+                    a.partial_cmp(b)
                         .unwrap_or_else(|| {
                             if a.is_nan() && b.is_nan() {
                                 Ordering::Equal

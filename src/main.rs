@@ -664,23 +664,20 @@ fn mouse_input(mouse_buttons: Res<Input<MouseButton>>, q_windows: Query<&Window,
 }
 fn window_resize(mut commands: Commands, mut ev_resize: EventReader<WindowResized>, q_windows: Query<&PrimaryWindow>, q_patches: Query<Entity, With<PatchComponent>>, mut state: ResMut<NextState<AppState>>) {
     for ev in ev_resize.iter() {
-        match ev {
-            WindowResized { window, width: _, height: _ } => {
-                if let Ok(_) = q_windows.get(*window) {
-                    match &state.0 {
-                        Some(state) if state == &AppState::Loaded => return,
-                        _ => {},
-                    }
+        let WindowResized { window, width: _, height: _ } = ev;
+        if q_windows.get(*window).is_ok() {
+            match &state.0 {
+                Some(state) if state == &AppState::Loaded => return,
+                _ => {},
+            }
 
-                    for patch in &q_patches {
-                        if let Some(patch) = commands.get_entity(patch) {
-                            patch.despawn_recursive();
-                        }
-                    }
-
-                    state.set(AppState::Loaded);
+            for patch in &q_patches {
+                if let Some(patch) = commands.get_entity(patch) {
+                    patch.despawn_recursive();
                 }
-            },
+            }
+
+            state.set(AppState::Loaded);
         }
     }
 }

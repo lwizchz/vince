@@ -18,7 +18,7 @@ None
 
 use std::collections::VecDeque;
 
-use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::{Mesh2dHandle, MaterialMesh2dBundle}, render::{render_resource::{PrimitiveTopology, Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}, view::RenderLayers, camera::RenderTarget}, core_pipeline::clear_color::ClearColorConfig};
+use bevy::{prelude::*, ecs::system::EntityCommands, sprite::{Mesh2dHandle, MaterialMesh2dBundle}, render::{render_resource::{PrimitiveTopology, Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}, view::RenderLayers, camera::RenderTarget}, core_pipeline::clear_color::ClearColorConfig};
 
 use serde::Deserialize;
 
@@ -60,40 +60,37 @@ impl Oscilloscope {
         let mut points: [Vec<Vec3>; Oscilloscope::MAX_GRAPHS] = vec![vec![]; Oscilloscope::MAX_GRAPHS]
             .try_into()
             .unwrap();
-        for i in 0..Oscilloscope::MAX_GRAPHS {
-            match self.vals[i].front() {
-                Some((t0, _)) => {
-                    if self.max_val[i] > 0.0 {
-                        self.max_val[i] /= 1.05;
-                    }
+        for (i, point) in points.iter_mut().enumerate() {
+            if let Some((t0, _)) = self.vals[i].front() {
+                if self.max_val[i] > 0.0 {
+                    self.max_val[i] /= 1.05;
+                }
 
-                    let (mut max_t, mut max_val) = self.vals[i].iter()
-                        .fold((0.0f64, 0.0f32), |mut a, (t, v)| {
-                            if *t > a.0 {
-                                a.0 = *t;
-                            }
-                            if v.abs() > a.1 {
-                                a.1 = v.abs();
-                            }
-                            a
-                        });
-                    if self.max_t > max_t {
-                        max_t = self.max_t;
-                    }
-                    if self.max_val[i] > max_val {
-                        max_val = self.max_val[i];
-                    }
-                    self.max_t = max_t;
-                    self.max_val[i] = max_val;
+                let (mut max_t, mut max_val) = self.vals[i].iter()
+                    .fold((0.0f64, 0.0f32), |mut a, (t, v)| {
+                        if *t > a.0 {
+                            a.0 = *t;
+                        }
+                        if v.abs() > a.1 {
+                            a.1 = v.abs();
+                        }
+                        a
+                    });
+                if self.max_t > max_t {
+                    max_t = self.max_t;
+                }
+                if self.max_val[i] > max_val {
+                    max_val = self.max_val[i];
+                }
+                self.max_t = max_t;
+                self.max_val[i] = max_val;
 
-                    points[i] = self.vals[i].iter()
-                        .map(|(t, v)| Vec3 {
-                            x: ((t - t0) * f64::from(Self::WIDTH as u16) / (max_t - t0)) as f32,
-                            y: v * f32::from(Self::HEIGHT as u16) / max_val,
-                            z: 0.0,
-                        }).collect::<Vec<Vec3>>();
-                },
-                None => {},
+                *point = self.vals[i].iter()
+                    .map(|(t, v)| Vec3 {
+                        x: ((t - t0) * f64::from(Self::WIDTH as u16) / (max_t - t0)) as f32,
+                        y: v * f32::from(Self::HEIGHT as u16) / max_val,
+                        z: 0.0,
+                    }).collect::<Vec<Vec3>>();
             }
         }
         points

@@ -193,7 +193,7 @@ impl Y4mReader {
         self.idx += 1;
         if should_loop {
             self.idx %= self.rgb_buffer.len();
-        } else if self.idx-1 >= self.rgb_buffer.len() {
+        } else if self.idx > self.rgb_buffer.len() {
             return None;
         }
 
