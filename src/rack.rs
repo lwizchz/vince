@@ -1,14 +1,13 @@
 use std::sync::{Arc, Mutex};
 
-use bevy::{prelude::*, utils::HashMap, sprite::Mesh2dHandle};
-use bevy::reflect::TypeUuid;
+use bevy::{prelude::*, utils::HashMap, reflect::TypeUuid, sprite::Mesh2dHandle};
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use oddio::Signal;
 use serde::Deserialize;
 
 use crate::modules::ModuleIOK;
-use crate::{StepType, patch::Patches, modules::{ModuleKey, Module, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
+use crate::{StepType, patch::Patches, modules::{ModuleKey, Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 const AUDIO_BUFFER_SIZE: usize = 512;
 const AUDIO_STREAM_SIZE: usize = 16384;
@@ -164,6 +163,16 @@ impl Rack {
         self.outs = HashMap::with_capacity(self.modules.len());
     }
 
+    pub fn keyboard_input(&mut self, keys: &Res<Input<KeyCode>>) {
+        for m in self.modules.values_mut() {
+            m.keyboard_input(keys);
+        }
+    }
+    pub fn mouse_input(&mut self, mouse_buttons: &Res<Input<MouseButton>>, window: &Window, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
+        for m in self.modules.values_mut() {
+            m.mouse_input(mouse_buttons, window, q_child, q_transform);
+        }
+    }
     pub fn step(&mut self, time: f64, st: StepType) {
         if self.audio_context.is_none() {
             self.init_audio();

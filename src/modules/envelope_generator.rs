@@ -125,7 +125,11 @@ impl Module for EnvelopeGenerator {
         let sustain = self.knobs[2];
         let release = self.knobs[3];
 
-        let x = ins[0];
+        let x = if ins[0].is_nan() {
+            1.0
+        } else {
+            ins[0]
+        };
         let asr = ins[1];
         if asr != 1.0 && asr != 0.0 && asr != -1.0 {
             error!("Invalid attack/sustain/release input value: {asr}");
@@ -188,7 +192,7 @@ impl Module for EnvelopeGenerator {
                         if asr == 1.0 {
                             self.attack_timestamp = Some(time);
                         } else if asr == 0.0 {
-                            if x > 0.0 {
+                            if x > 0.0 && !ins[0].is_nan() {
                                 error!("Can't sustain the envelope when it hasn't been triggered");
                             }
                         } else if asr == -1.0 {

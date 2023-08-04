@@ -36,6 +36,12 @@ pub mod video;
 
 pub mod conway;
 
+#[derive(Debug, Clone)]
+pub struct MouseClick {
+    pub pos: Vec2,
+    pub button: MouseButton,
+}
+
 #[typetag::deserialize(tag = "type")]
 pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     fn init(&mut self, id: usize, ec: EntityCommands, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle);
@@ -50,18 +56,27 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     fn is_own_window(&self) -> bool {
         false
     }
-    fn get_world_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_main_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
+    fn get_screen_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) -> Vec2 {
         if let Some(component) = self.component() {
             if let Ok(parent) = q_child.get(component) {
                 if let Ok(pos_screen) = q_transform.get(parent.get()) {
-                    if let Ok(main_camera) = q_main_camera.get_single() {
-                        if let Some(pos_world) = main_camera.0.viewport_to_world(main_camera.1, pos_screen.translation().truncate()) {
-                            return Vec3::from((pos_world.origin.truncate(), 0.0))
-                                * Vec3::new(1.0, -1.0, 1.0)
-                                + Vec3::new(0.0, -100.0, 0.0);
-                        }
-                    }
+                    return pos_screen.translation().truncate();
                 }
+            }
+        }
+        Vec2::ZERO
+    }
+    fn get_world_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_main_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
+        let pos_screen = self.get_screen_pos(q_child, q_transform);
+        if pos_screen == Vec2::ZERO {
+            return Vec3::ZERO;
+        }
+
+        if let Ok(main_camera) = q_main_camera.get_single() {
+            if let Some(pos_world) = main_camera.0.viewport_to_world(main_camera.1, pos_screen) {
+                return Vec3::from((pos_world.origin.truncate(), 0.0))
+                    * Vec3::new(1.0, -1.0, 1.0)
+                    + Vec3::new(0.0, -100.0, 0.0);
             }
         }
         Vec3::ZERO
@@ -85,6 +100,32 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     }
     fn extend_audio_buffer(&mut self, _ai: &[f32]) {}
 
+    fn keyboard_input(&mut self, _keys: &Res<Input<KeyCode>>) {}
+    fn mouse_input(&mut self, mouse_buttons: &Res<Input<MouseButton>>, window: &Window, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
+        if let Some(mpos) = window.cursor_position() {
+            let mpos = Vec2::new(mpos.x, window.height() - mpos.y);
+
+            let screen_pos = self.get_screen_pos(q_child, q_transform);
+            let (w, h) = if self.is_large() {
+                (660.0, 550.0)
+            } else {
+                (170.0, 200.0)
+            };
+
+
+            if mpos.x >= screen_pos.x - w/2.0 && mpos.x < screen_pos.x + w/2.0
+                && mpos.y >= screen_pos.y - h/2.0 && mpos.y < screen_pos.y + h/2.0
+            {
+                for &button in mouse_buttons.get_just_released() {
+                    self.mouse_click(MouseClick {
+                        pos: mpos,
+                        button,
+                    });
+                }
+            }
+        }
+    }
+    fn mouse_click(&mut self, _mouse_click: MouseClick) {}
     fn step(&mut self, time: f64, st: StepType, ins: &[f32]) -> Vec<f32>;
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {}
 }

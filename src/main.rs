@@ -119,6 +119,7 @@ fn main() {
         .add_system(rack_stepper.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(rack_render.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
         .add_system(keyboard_input.run_if(in_state(AppState::Ready)))
+        .add_system(mouse_input.run_if(in_state(AppState::Ready)))
         .add_system(window_resize.run_if(in_state(AppState::Ready)))
         .run();
 }
@@ -571,6 +572,8 @@ fn keyboard_input(mut commands: Commands, keys: Res<Input<KeyCode>>, mut racks: 
             RACK_DIR_IDX.load(atomic::Ordering::Acquire)
         ]
     ) {
+        rack.keyboard_input(&keys);
+
         if keys.just_released(KeyCode::Right) {
             rack.exit();
 
@@ -648,6 +651,15 @@ fn keyboard_input(mut commands: Commands, keys: Res<Input<KeyCode>>, mut racks: 
             rack.exit();
             exit.send(AppExit);
         }
+    }
+}
+fn mouse_input(mouse_buttons: Res<Input<MouseButton>>, q_windows: Query<&Window, With<PrimaryWindow>>, mut racks: ResMut<Assets<Rack>>, h_racks: ResMut<RackHandles>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>) {
+    if let Some(rack) = racks.get_mut(
+        &h_racks.0[
+            RACK_DIR_IDX.load(atomic::Ordering::Acquire)
+        ]
+    ) {
+        rack.mouse_input(&mouse_buttons, q_windows.single(), &q_child, &q_transform);
     }
 }
 fn window_resize(mut commands: Commands, mut ev_resize: EventReader<WindowResized>, q_windows: Query<&PrimaryWindow>, q_patches: Query<Entity, With<PatchComponent>>, mut state: ResMut<NextState<AppState>>) {

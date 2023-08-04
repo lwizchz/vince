@@ -19,3 +19,5 @@ pub mod file_decoder;
 
 #[cfg(feature = "midi")]
 pub mod midi_in;
+
+pub mod keyboard_in;
