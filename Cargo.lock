@@ -3492,14 +3492,16 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "screenshots"
-version = "0.5.4"
-source = "git+https://github.com/lwizchz/screenshots-rs#9512e891f163a33a62b10d507bed752c3aee8f9f"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5949a375cfa59d2da560c886629e237b7471074ddaf64ce81fe6f96a1a15ec7"
 dependencies = [
  "anyhow",
  "core-graphics 0.22.3",
  "dbus",
  "display-info",
  "fxhash",
+ "percent-encoding",
  "png",
  "widestring",
  "windows 0.48.0",
@@ -4049,7 +4051,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "vince"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "bevy",
  "bevy_common_assets",

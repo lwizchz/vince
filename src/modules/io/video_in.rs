@@ -230,8 +230,8 @@ impl Module for VideoIn {
                 if let Some(screen) = screen {
                     if let Ok(mut images) = screen.images.try_lock() {
                         for image in images.drain(..) {
-                            if self.video_buffer.len() < image.bgra().len() {
-                                self.video_buffer.extend(image.bgra());
+                            if self.video_buffer.len() < image.rgba().len() {
+                                self.video_buffer.extend(image.rgba());
                             }
                         }
                     }
@@ -246,7 +246,7 @@ impl Module for VideoIn {
                                     image.enumerate_pixels()
                                         .filter_map(|(x, y, p)| {
                                             if x < ComponentVideoOut::WIDTH as u32 && y < ComponentVideoOut::HEIGHT as u32 {
-                                                Some([p.0[2], p.0[1], p.0[0], 255])
+                                                Some([p.0[0], p.0[1], p.0[2], 255])
                                             } else {
                                                 None
                                             }
@@ -263,10 +263,10 @@ impl Module for VideoIn {
         if self.video_buffer.is_empty() {
             vec![f32::NAN, f32::NAN, f32::NAN]
         } else {
-            let bgra: Vec<u8> = self.video_buffer.drain(0..4).collect();
-            let b = f32::from(bgra[0]) / 255.0;
-            let g = f32::from(bgra[1]) / 255.0;
-            let r = f32::from(bgra[2]) / 255.0;
+            let rgba: Vec<u8> = self.video_buffer.drain(0..4).collect();
+            let r = f32::from(rgba[0]) / 255.0;
+            let g = f32::from(rgba[1]) / 255.0;
+            let b = f32::from(rgba[2]) / 255.0;
 
             let er = r.powf(VideoIn::GAMMA);
             let eg = g.powf(VideoIn::GAMMA);
