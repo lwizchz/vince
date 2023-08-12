@@ -77,7 +77,7 @@ use std::sync::atomic::{self, AtomicUsize};
 use std::{time::Duration, cmp};
 use std::env;
 
-use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
+use bevy::{prelude::*, app::AppExit, asset::{LoadState, ChangeWatcher}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
 
 use bevy_common_assets::toml::TomlAssetPlugin;
 
@@ -99,7 +99,7 @@ static mut CONTINUOUS_TIME: Option<f64> = None;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(AssetPlugin {
-            watch_for_changes: true,
+            watch_for_changes: ChangeWatcher::with_delay(Duration::from_millis(200)),
             ..default()
         }).set(WindowPlugin {
             primary_window: Some(Window {
@@ -108,19 +108,15 @@ fn main() {
                 ..default()
             }),
             ..default()
-        })).add_plugin(TomlAssetPlugin::<Rack>::new(&["toml"]))
-        .add_plugin(bevy_framepace::FramepacePlugin)
+        })).add_plugins(TomlAssetPlugin::<Rack>::new(&["toml"]))
+        .add_plugins(bevy_framepace::FramepacePlugin)
         .add_state::<AppState>()
         .insert_resource(FixedTime::new_from_secs(1.0 / f32::from(FRAME_RATE)))
-        .add_startup_system(load_rack)
-        .add_system(setup.run_if(in_state(AppState::Loading)))
-        .add_system(setup_patches.run_if(in_state(AppState::Loaded)))
-        .add_system(rack_reloader.run_if(in_state(AppState::Ready)))
-        .add_system(rack_stepper.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
-        .add_system(rack_render.in_schedule(CoreSchedule::FixedUpdate).run_if(in_state(AppState::Ready)))
-        .add_system(keyboard_input.run_if(in_state(AppState::Ready)))
-        .add_system(mouse_input.run_if(in_state(AppState::Ready)))
-        .add_system(window_resize.run_if(in_state(AppState::Ready)))
+        .add_systems(Startup, load_rack)
+        .add_systems(Update, setup.run_if(in_state(AppState::Loading)))
+        .add_systems(Update, setup_patches.run_if(in_state(AppState::Loaded)))
+        .add_systems(Update, (rack_reloader, keyboard_input, mouse_input, window_resize).run_if(in_state(AppState::Ready)))
+        .add_systems(FixedUpdate, (rack_stepper, rack_render).run_if(in_state(AppState::Ready)))
         .run();
 }
 
@@ -265,20 +261,19 @@ fn setup(mut commands: Commands, mut h_racks: ResMut<RackHandles>, mut racks: Re
                     parent.spawn((
                         NodeBundle {
                             style: Style {
-                                size: if m.1.is_large() {
-                                    Size {
-                                        width: Val::Px(660.0),
-                                        height: Val::Px(550.0),
-                                    }
+                                width: if m.1.is_large() {
+                                    Val::Px(660.0)
                                 } else {
-                                    Size {
-                                        width: Val::Px(170.0),
-                                        height: Val::Px(200.0),
-                                    }
+                                    Val::Px(170.0)
+                                },
+                                height: if m.1.is_large() {
+                                    Val::Px(550.0)
+                                } else {
+                                    Val::Px(200.0)
                                 },
                                 margin: UiRect::all(Val::Px(5.0)),
                                 padding: UiRect::all(Val::Px(10.0)),
-                                overflow: Overflow::Hidden,
+                                overflow: Overflow::clip(),
                                 ..default()
                             },
                             background_color: Color::DARK_GRAY.into(),
@@ -351,20 +346,19 @@ fn setup(mut commands: Commands, mut h_racks: ResMut<RackHandles>, mut racks: Re
                     commands.entity(child_window).commands().spawn((
                         NodeBundle {
                             style: Style {
-                                size: if m.1.is_large() {
-                                    Size {
-                                        width: Val::Px(660.0),
-                                        height: Val::Px(550.0),
-                                    }
+                                width: if m.1.is_large() {
+                                    Val::Px(660.0)
                                 } else {
-                                    Size {
-                                        width: Val::Px(170.0),
-                                        height: Val::Px(200.0),
-                                    }
+                                    Val::Px(170.0)
+                                },
+                                height: if m.1.is_large() {
+                                    Val::Px(550.0)
+                                } else {
+                                    Val::Px(200.0)
                                 },
                                 margin: UiRect::all(Val::Px(5.0)),
                                 padding: UiRect::all(Val::Px(10.0)),
-                                overflow: Overflow::Hidden,
+                                overflow: Overflow::clip(),
                                 ..default()
                             },
                             background_color: Color::DARK_GRAY.into(),

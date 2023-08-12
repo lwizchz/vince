@@ -308,10 +308,8 @@ impl Module for FileDecoder {
                             TextSection::new(format!("{}\n", self.filename), ts.clone()),
                             TextSection::new("K0", ts),
                         ]).with_style(Style {
-                            size: Size {
-                                width: Val::Px(150.0),
-                                height: Val::Px(180.0),
-                            },
+                            width: Val::Px(150.0),
+                            height: Val::Px(180.0),
                             flex_wrap: FlexWrap::Wrap,
                             ..default()
                         }),

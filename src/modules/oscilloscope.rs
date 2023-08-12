@@ -209,11 +209,9 @@ impl Module for Oscilloscope {
                         ImageBundle {
                             style: Style {
                                 position_type: PositionType::Relative,
-                                position: UiRect::top(Val::Px(10.0)),
-                                size: Size::new(
-                                    Val::Px(f32::from(Self::WIDTH as u16)),
-                                    Val::Px(f32::from(Self::HEIGHT as u16)),
-                                ),
+                                top: Val::Px(10.0),
+                                width: Val::Px(f32::from(Self::WIDTH as u16)),
+                                height: Val::Px(f32::from(Self::HEIGHT as u16)),
                                 ..default()
                             },
                             image: UiImage::new(image_handle.clone()),

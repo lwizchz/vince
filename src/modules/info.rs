@@ -75,10 +75,8 @@ impl Module for Info {
                                         .map(|(k, v)| TextSection::new(format!("{k}: {v}\n"), ts.clone()))
                                 )
                         ).with_style(Style {
-                            size: Size {
-                                width: Val::Px(150.0),
-                                height: Val::Px(180.0),
-                            },
+                            width: Val::Px(150.0),
+                            height: Val::Px(180.0),
                             flex_wrap: FlexWrap::Wrap,
                             ..default()
                         }),

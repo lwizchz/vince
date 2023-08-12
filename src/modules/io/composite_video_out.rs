@@ -17,7 +17,7 @@ None
 
 use std::collections::VecDeque;
 
-use bevy::{prelude::*, ecs::{system::EntityCommands}, sprite::Mesh2dHandle, render::{render_resource::{Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}}};
+use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle, render::render_resource::{Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}};
 
 use serde::Deserialize;
 
@@ -108,11 +108,9 @@ impl Module for CompositeVideoOut {
                         ImageBundle {
                             style: Style {
                                 position_type: PositionType::Relative,
-                                position: UiRect::top(Val::Px(10.0)),
-                                size: Size::new(
-                                    Val::Px(f32::from(640u16)),
-                                    Val::Px(f32::from(480u16)),
-                                ),
+                                top: Val::Px(10.0),
+                                width: Val::Px(f32::from(640u16)),
+                                height: Val::Px(f32::from(480u16)),
                                 ..default()
                             },
                             image: UiImage::new(image_handle.clone()),

@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use bevy::{prelude::*, utils::HashMap, reflect::TypeUuid, sprite::Mesh2dHandle};
+use bevy::{prelude::*, reflect::TypePath, utils::HashMap, reflect::TypeUuid, sprite::Mesh2dHandle};
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use oddio::Signal;
@@ -39,7 +39,7 @@ impl std::fmt::Debug for AudioContext {
     }
 }
 
-#[derive(Deserialize, TypeUuid, Debug)]
+#[derive(Deserialize, TypeUuid, Debug, TypePath)]
 #[uuid = "23f4f379-ed3e-4e41-9093-58b4e73ea9a9"]
 pub struct Rack {
     #[serde(skip)]
@@ -325,7 +325,7 @@ impl Rack {
         }
 
         // Remove NANs from output map
-        self.outs.drain_filter(|_, v| v.is_nan());
+        self.outs.extract_if(|_, v| v.is_nan()).last();
     }
     pub fn render(&mut self, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
         for m in self.modules.values_mut() {
