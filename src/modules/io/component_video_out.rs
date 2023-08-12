@@ -158,7 +158,6 @@ impl Module for ComponentVideoOut {
                     if let Ok(camera) = q_camera.get_single() {
                         if let Some(pos_world) = camera.0.viewport_to_world(camera.1, pos_screen.translation().truncate()) {
                             return Vec3::from((pos_world.origin.truncate(), 0.0))
-                                * Vec3::new(1.0, -1.0, 1.0)
                                 + Vec3::new(0.0, -250.0, 0.0);
                         }
                     }

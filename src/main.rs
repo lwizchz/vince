@@ -226,9 +226,9 @@ fn setup(mut commands: Commands, mut h_racks: ResMut<RackHandles>, mut racks: Re
 
         // Module rects
         let ts = TextStyle {
-            font: asset_server.load("fonts/liberation_mono.ttf"),
             font_size: 16.0,
             color: Color::WHITE,
+            ..default()
         };
         let mut component = commands.spawn(
             NodeBundle {
@@ -318,7 +318,7 @@ fn setup(mut commands: Commands, mut h_racks: ResMut<RackHandles>, mut racks: Re
                             target: RenderTarget::Window(WindowRef::Entity(child_window)),
                             ..default()
                         },
-                        transform: Transform::from_xyz(640.0*m.0.id as f32, 1080.0*2.0, 0.0),
+                        transform: Transform::from_xyz(640.0*m.0.id as f32, 1080.0*2.0, 1.0),
                         projection: OrthographicProjection {
                             scaling_mode: if m.1.is_large() {
                                 ScalingMode::Fixed {
