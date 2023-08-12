@@ -414,7 +414,7 @@ fn setup_patches(mut commands: Commands, racks: Res<Assets<Rack>>, h_racks: ResM
                     bottom = bottom.min(startpos.y).min(endpos.y);
                     let midpos = Vec3::new((startpos.x+endpos.x)/2.0, bottom - 50.0 - 5.0 * i as f32, 0.0);
 
-                    let points: Vec<Vec3> = vec![
+                    let points: Vec<Vec3> = [
                         startpos,
                         startpos.lerp(midpos, 0.5) - Vec3::Y * 10.0,
                         midpos,
@@ -456,9 +456,8 @@ fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Ra
                             !m.1.is_init()
                         })
                     {
-                        match &state.0 {
-                            Some(state) if state == &AppState::Loading => return,
-                            _ => {},
+                        if let Some(AppState::Loading) = &state.0 {
+                            return;
                         }
 
                         for ent in &q_any {
@@ -571,9 +570,8 @@ fn keyboard_input(mut commands: Commands, keys: Res<Input<KeyCode>>, mut racks: 
         if keys.just_released(KeyCode::Right) {
             rack.exit();
 
-            match &state.0 {
-                Some(state) if state == &AppState::Loading => return,
-                _ => {},
+            if let Some(AppState::Loading) = &state.0 {
+                return;
             }
 
             for ent in &q_any {
@@ -604,9 +602,8 @@ fn keyboard_input(mut commands: Commands, keys: Res<Input<KeyCode>>, mut racks: 
         } else if keys.just_released(KeyCode::Left) {
             rack.exit();
 
-            match &state.0 {
-                Some(state) if state == &AppState::Loading => return,
-                _ => {},
+            if let Some(AppState::Loading) = &state.0 {
+                return;
             }
 
             for ent in &q_any {
@@ -660,9 +657,8 @@ fn window_resize(mut commands: Commands, mut ev_resize: EventReader<WindowResize
     for ev in ev_resize.iter() {
         let WindowResized { window, width: _, height: _ } = ev;
         if q_windows.get(*window).is_ok() {
-            match &state.0 {
-                Some(state) if state == &AppState::Loaded => return,
-                _ => {},
+            if let Some(AppState::Loaded) = &state.0 {
+                return;
             }
 
             for patch in &q_patches {

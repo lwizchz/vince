@@ -65,7 +65,7 @@ impl Conway {
     fn init_grid(&mut self) {
         let seed = self.seed.chars()
             .map(|c| c as u8)
-            .chain([0u8; 32].into_iter())
+            .chain([0u8; 32])
             .collect::<Vec<u8>>();
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed(seed[..32].try_into().unwrap());
         let mut grid = [[Cell::Dead; ComponentVideoOut::WIDTH]; ComponentVideoOut::HEIGHT];
