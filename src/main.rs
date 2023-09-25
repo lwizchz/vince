@@ -3,9 +3,10 @@
 This is a modular synthesizer system built to process both audio and video
 signals. It is in early development so please do not expect stability.
 
-Modules are defined in individual files under the `src/modules` directory. Each
-module can take several inputs, produce several outputs, and use several "knobs"
-which are used to adjust module-specific parameters such as gain or speed.
+Modules are defined in individual files under the [`src/modules`][modules]
+directory. Each module can take several inputs, produce several outputs, and
+use several "knobs" which are used to adjust module-specific parameters such as
+gain or speed.
 
 ## Usage
 
