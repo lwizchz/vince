@@ -177,7 +177,9 @@ impl Clone for Y4mWriter {
 
 #[derive(Debug)]
 enum FileWriterError {
+    #[allow(dead_code)]
     HoundError(hound::Error),
+    #[allow(dead_code)]
     Y4mError(y4m::Error),
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "vince"
-version = "0.4.7"
+version = "0.4.8"
 edition = "2021"
 authors = ["Louise Montalvo <louanmontalvo@gmail.com>"]
 license = "MIT"
@@ -38,7 +38,7 @@ y4m = { version = "0.8.0", optional = true }
 tikv-jemallocator = "0.5.4"
 
 [features]
-default = ["video_in", "files", "midi", "pitch_shifter"]
+default = ["files", "midi", "pitch_shifter"]
 video_in = ["dep:screenshots", "dep:nokhwa", "dep:image"]
 files = ["dep:hound", "dep:y4m"]
 midi = ["dep:midir", "dep:midly"]

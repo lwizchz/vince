@@ -92,6 +92,7 @@ pub struct VideoIn {
 impl VideoIn {
     const GAMMA: f32 = 2.2;
 
+    #[deprecated(since = "0.4.8", note = "The VideoIn module is no longer enabled by default due to library issues on some platforms.")]
     fn queue_video_in(&mut self) {
         match &mut self.source {
             VideoSource::Screen(screen) => {

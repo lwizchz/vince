@@ -73,8 +73,9 @@ example.
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{self, AtomicUsize};
+use std::sync::{Mutex, atomic::{self, AtomicUsize}};
 use std::{time::Duration, cmp};
 use std::env;
 
@@ -95,7 +96,7 @@ const FRAME_RATE: u16 = 60;
 
 static RACK_DIR_IDX: AtomicUsize = AtomicUsize::new(0);
 
-static mut CONTINUOUS_TIME: Option<f64> = None;
+static CONTINUOUS_TIME: Mutex<Option<f64>> = Mutex::new(None);
 
 fn main() {
     App::new()
@@ -489,17 +490,15 @@ pub enum StepType {
     Video,
 }
 fn continuous_step(time: &Res<Time>, dt: f64, rack: &mut Rack, st: StepType) {
-    let t = unsafe {
-        match &mut CONTINUOUS_TIME {
-            Some(t) => {
-                *t += dt;
-                *t
-            },
-            None => {
-                CONTINUOUS_TIME = Some(time.elapsed_seconds_wrapped_f64());
-                CONTINUOUS_TIME.unwrap()
-            },
-        }
+    let t: f64 = match CONTINUOUS_TIME.lock().unwrap().deref_mut() {
+        Some(t) => {
+            *t += dt;
+            *t
+        },
+        ct @ None => {
+            *ct = Some(time.elapsed_seconds_wrapped_f64());
+            ct.unwrap()
+        },
     };
 
     rack.step(t, st);
