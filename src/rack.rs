@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use bevy::asset::{LoadState, LoadedFolder, RecursiveDependencyLoadState};
 use bevy::{prelude::*, reflect::TypePath, utils::HashMap, reflect::TypeUuid, sprite::Mesh2dHandle};
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
@@ -39,11 +40,14 @@ impl std::fmt::Debug for AudioContext {
     }
 }
 
-#[derive(Deserialize, TypeUuid, Debug, TypePath)]
+#[derive(Asset, Deserialize, TypeUuid, Debug, TypePath)]
 #[uuid = "23f4f379-ed3e-4e41-9093-58b4e73ea9a9"]
 pub struct Rack {
     #[serde(skip)]
     pub(crate) audio_context: Option<AudioContext>,
+
+    #[serde(skip)]
+    pub(crate) path: Option<String>,
 
     #[serde(default)]
     pub info: HashMap<String, String>,
@@ -341,5 +345,23 @@ impl Rack {
         self.outs.clear();
     }
 }
+
 #[derive(Resource, Debug, Clone)]
-pub struct RackHandles(pub Vec<Handle<Rack>>);
+pub enum RackMainHandle {
+    Folder(Handle<LoadedFolder>),
+    Single(Handle<Rack>),
+}
+impl RackMainHandle {
+    pub fn get_load_state(&self, asset_server: Res<AssetServer>) -> Option<LoadState> {
+        match self {
+            RackMainHandle::Folder(fh) => match asset_server.get_recursive_dependency_load_state(fh) {
+                Some(RecursiveDependencyLoadState::NotLoaded) => Some(LoadState::NotLoaded),
+                Some(RecursiveDependencyLoadState::Loading) => Some(LoadState::Loading),
+                Some(RecursiveDependencyLoadState::Loaded) => Some(LoadState::Loaded),
+                Some(RecursiveDependencyLoadState::Failed) => Some(LoadState::Failed),
+                None => None,
+            },
+            RackMainHandle::Single(sh) => asset_server.get_load_state(sh),
+        }
+    }
+}

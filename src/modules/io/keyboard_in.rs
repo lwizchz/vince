@@ -122,7 +122,7 @@ impl Module for KeyboardIn {
         ];
         for vk in valid_keys {
             if keys.just_pressed(vk) {
-                self.keys.extract_if(|k| k.0 == vk).last();
+                self.keys.extract_if(.., |k| k.0 == vk).last();
                 self.keys.push((vk, Asr::Attack));
             } else if keys.just_released(vk) {
                 for k in &mut self.keys {
@@ -137,7 +137,7 @@ impl Module for KeyboardIn {
                     }
                 }
             } else {
-                self.keys.extract_if(|k| k.0 == vk).last();
+                self.keys.extract_if(.., |k| k.0 == vk).last();
             }
         }
     }

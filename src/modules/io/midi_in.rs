@@ -187,7 +187,7 @@ impl Module for MidiIn {
                             note_depth = u7::from(0);
                         } else {
                             self.notes
-                                .extract_if(|(k, _d)| *k == key)
+                                .extract_if(.., |(k, _d)| *k == key)
                                 .last();
                         }
                     },
