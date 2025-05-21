@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use bevy::asset::{LoadState, LoadedFolder, RecursiveDependencyLoadState};
-use bevy::{prelude::*, reflect::TypePath, utils::HashMap, reflect::TypeUuid, sprite::Mesh2dHandle};
+use bevy::{prelude::*, reflect::TypePath, utils::HashMap, sprite::Mesh2dHandle};
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use oddio::Signal;
@@ -40,8 +40,7 @@ impl std::fmt::Debug for AudioContext {
     }
 }
 
-#[derive(Asset, Deserialize, TypeUuid, Debug, TypePath)]
-#[uuid = "23f4f379-ed3e-4e41-9093-58b4e73ea9a9"]
+#[derive(Asset, Deserialize, Debug, TypePath)]
 pub struct Rack {
     #[serde(skip)]
     pub(crate) audio_context: Option<AudioContext>,
@@ -167,12 +166,12 @@ impl Rack {
         self.outs = HashMap::with_capacity(self.modules.len());
     }
 
-    pub fn keyboard_input(&mut self, keys: &Res<Input<KeyCode>>) {
+    pub fn keyboard_input(&mut self, keys: &Res<ButtonInput<KeyCode>>) {
         for m in self.modules.values_mut() {
             m.keyboard_input(keys);
         }
     }
-    pub fn mouse_input(&mut self, mouse_buttons: &Res<Input<MouseButton>>, window: &Window, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
+    pub fn mouse_input(&mut self, mouse_buttons: &Res<ButtonInput<MouseButton>>, window: &Window, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
         for m in self.modules.values_mut() {
             m.mouse_input(mouse_buttons, window, q_child, q_transform);
         }

@@ -18,7 +18,7 @@ None
 
 use std::collections::VecDeque;
 
-use bevy::{prelude::*, ecs::system::EntityCommands, sprite::{Mesh2dHandle, MaterialMesh2dBundle}, render::{render_resource::{PrimitiveTopology, Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}, view::RenderLayers, camera::RenderTarget}, core_pipeline::clear_color::ClearColorConfig};
+use bevy::{ecs::system::EntityCommands, prelude::*, render::{camera::{ClearColorConfig, RenderTarget}, render_asset::RenderAssetUsages, render_resource::{Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, view::RenderLayers}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}};
 
 use serde::Deserialize;
 
@@ -123,7 +123,7 @@ impl Module for Oscilloscope {
         let image_handle = images.add(image);
 
         let layer = RenderLayers::layer(((id+1) % 255) as u8);
-        let mut mesh: [Mesh; Oscilloscope::MAX_GRAPHS] = vec![Mesh::new(PrimitiveTopology::LineStrip); Oscilloscope::MAX_GRAPHS]
+        let mut mesh: [Mesh; Oscilloscope::MAX_GRAPHS] = vec![Mesh::new(PrimitiveTopology::LineStrip, RenderAssetUsages::all()); Oscilloscope::MAX_GRAPHS]
             .try_into()
             .unwrap();
         for (i, gen_points) in self.gen_points().into_iter().enumerate() {
@@ -159,18 +159,13 @@ impl Module for Oscilloscope {
         );
         ec.commands().spawn((
             Camera2dBundle {
-                camera_2d: Camera2d {
-                    clear_color: ClearColorConfig::Custom(Color::BLACK),
-                },
                 camera: Camera {
                     order: -1,
                     target: RenderTarget::Image(image_handle.clone()),
+                    clear_color: ClearColorConfig::Custom(Color::BLACK),
                     ..default()
                 },
                 ..default()
-            },
-            UiCameraConfig {
-                show_ui: false,
             },
             CameraComponent,
             layer,

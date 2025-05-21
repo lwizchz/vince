@@ -104,21 +104,21 @@ impl Module for KeyboardIn {
         1
     }
 
-    fn keyboard_input(&mut self, keys: &Res<Input<KeyCode>>) {
+    fn keyboard_input(&mut self, keys: &Res<ButtonInput<KeyCode>>) {
         let valid_keys = [
-            KeyCode::Z,
-            KeyCode::S,
-            KeyCode::X,
-            KeyCode::D,
-            KeyCode::C,
+            KeyCode::KeyZ,
+            KeyCode::KeyS,
+            KeyCode::KeyX,
+            KeyCode::KeyD,
+            KeyCode::KeyC,
 
-            KeyCode::V,
-            KeyCode::G,
-            KeyCode::B,
-            KeyCode::H,
-            KeyCode::N,
-            KeyCode::J,
-            KeyCode::M,
+            KeyCode::KeyV,
+            KeyCode::KeyG,
+            KeyCode::KeyB,
+            KeyCode::KeyH,
+            KeyCode::KeyN,
+            KeyCode::KeyJ,
+            KeyCode::KeyM,
         ];
         for vk in valid_keys {
             if keys.just_pressed(vk) {
@@ -175,19 +175,19 @@ fn get_freq(k: KeyCode, octave: f32) -> f32 {
     let key_order = {
         let mut key_order = HashMap::new();
 
-        key_order.insert(KeyCode::Z, -9);
-        key_order.insert(KeyCode::S, -8);
-        key_order.insert(KeyCode::X, -7);
-        key_order.insert(KeyCode::D, -6);
-        key_order.insert(KeyCode::C, -5);
+        key_order.insert(KeyCode::KeyZ, -9);
+        key_order.insert(KeyCode::KeyS, -8);
+        key_order.insert(KeyCode::KeyX, -7);
+        key_order.insert(KeyCode::KeyD, -6);
+        key_order.insert(KeyCode::KeyC, -5);
 
-        key_order.insert(KeyCode::V, -4);
-        key_order.insert(KeyCode::G, -3);
-        key_order.insert(KeyCode::B, -2);
-        key_order.insert(KeyCode::H, -1);
-        key_order.insert(KeyCode::N, 0);
-        key_order.insert(KeyCode::J, 1);
-        key_order.insert(KeyCode::M, 2);
+        key_order.insert(KeyCode::KeyV, -4);
+        key_order.insert(KeyCode::KeyG, -3);
+        key_order.insert(KeyCode::KeyB, -2);
+        key_order.insert(KeyCode::KeyH, -1);
+        key_order.insert(KeyCode::KeyN, 0);
+        key_order.insert(KeyCode::KeyJ, 1);
+        key_order.insert(KeyCode::KeyM, 2);
 
         key_order
     };

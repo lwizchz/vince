@@ -99,8 +99,8 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     }
     fn extend_audio_buffer(&mut self, _ai: &[f32]) {}
 
-    fn keyboard_input(&mut self, _keys: &Res<Input<KeyCode>>) {}
-    fn mouse_input(&mut self, mouse_buttons: &Res<Input<MouseButton>>, window: &Window, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
+    fn keyboard_input(&mut self, _keys: &Res<ButtonInput<KeyCode>>) {}
+    fn mouse_input(&mut self, mouse_buttons: &Res<ButtonInput<MouseButton>>, window: &Window, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
         if let Some(mpos) = window.cursor_position() {
             let screen_pos = self.get_screen_pos(q_child, q_transform);
             let (w, h) = if self.is_large() {

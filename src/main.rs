@@ -78,6 +78,7 @@ use std::sync::{Mutex, atomic::{self, AtomicUsize}};
 use std::{time::Duration, cmp};
 use std::env;
 
+use bevy::render::render_asset::RenderAssetUsages;
 use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
 
 use bevy_common_assets::toml::TomlAssetPlugin;
@@ -108,7 +109,7 @@ fn main() {
             ..default()
         })).add_plugins(TomlAssetPlugin::<Rack>::new(&["toml"]))
         .add_plugins(bevy_framepace::FramepacePlugin)
-        .add_state::<AppState>()
+        .init_state::<AppState>()
         .insert_resource(Time::<Fixed>::from_seconds(1.0 / f64::from(FRAME_RATE)))
         .add_systems(Startup, load_rack)
         .add_systems(Update, setup.run_if(in_state(AppState::Loading)))
@@ -311,9 +312,6 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                         },
                         ..default()
                     },
-                    UiCameraConfig {
-                        show_ui: false,
-                    },
                     CameraComponent,
                 ));
 
@@ -396,13 +394,13 @@ fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut me
                         .map(|p| *p - startpos)
                         .collect();
 
-                    let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
+                    let mut mesh = Mesh::new(PrimitiveTopology::LineStrip, RenderAssetUsages::all());
                     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points);
 
                     let _component = commands.spawn((
                         MaterialMesh2dBundle {
                             mesh: meshes.add(mesh).into(),
-                            material: materials.add(colors[i % colors.len()].into()),
+                            material: materials.add(colors[i % colors.len()]),
                             transform: Transform::from_translation(startpos),
                             ..default()
                         },
@@ -519,11 +517,11 @@ fn rack_render(mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>
         rack.render(&mut images, &mut meshes, &mut q_text, &mut q_image, &mut q_mesh);
     }
 }
-fn keyboard_input(mut commands: Commands, keys: Res<Input<KeyCode>>, mut racks: ResMut<Assets<Rack>>, mut q_windows: Query<&mut Window>, q_child_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, mut state: ResMut<NextState<AppState>>, mut exit: EventWriter<AppExit>) {
+fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut racks: ResMut<Assets<Rack>>, mut q_windows: Query<&mut Window>, q_child_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, mut state: ResMut<NextState<AppState>>, mut exit: EventWriter<AppExit>) {
     if let Some((_, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
         rack.keyboard_input(&keys);
 
-        if keys.just_released(KeyCode::Right) {
+        if keys.just_released(KeyCode::ArrowRight) {
             rack.exit();
 
             if let Some(AppState::Loading) = &state.0 {
@@ -555,7 +553,7 @@ fn keyboard_input(mut commands: Commands, keys: Res<Input<KeyCode>>, mut racks: 
             ).unwrap();
 
             state.set(AppState::Loading);
-        } else if keys.just_released(KeyCode::Left) {
+        } else if keys.just_released(KeyCode::ArrowLeft) {
             rack.exit();
 
             if let Some(AppState::Loading) = &state.0 {
@@ -600,7 +598,7 @@ fn keyboard_input(mut commands: Commands, keys: Res<Input<KeyCode>>, mut racks: 
         }
     }
 }
-fn mouse_input(mouse_buttons: Res<Input<MouseButton>>, q_windows: Query<&Window, With<PrimaryWindow>>, mut racks: ResMut<Assets<Rack>>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>) {
+fn mouse_input(mouse_buttons: Res<ButtonInput<MouseButton>>, q_windows: Query<&Window, With<PrimaryWindow>>, mut racks: ResMut<Assets<Rack>>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>) {
     if let Some((_, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
         rack.mouse_input(&mouse_buttons, q_windows.single(), &q_child, &q_transform);
     }
