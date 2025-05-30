@@ -351,7 +351,7 @@ pub enum RackMainHandle {
     Single(Handle<Rack>),
 }
 impl RackMainHandle {
-    pub fn get_load_state(&self, asset_server: Res<AssetServer>) -> Option<LoadState> {
+    pub fn get_load_state(&self, asset_server: &Res<AssetServer>) -> Option<LoadState> {
         match self {
             RackMainHandle::Folder(fh) => match asset_server.get_recursive_dependency_load_state(fh) {
                 Some(RecursiveDependencyLoadState::NotLoaded) => Some(LoadState::NotLoaded),

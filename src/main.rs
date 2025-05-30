@@ -74,6 +74,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 use std::ops::DerefMut;
 use std::path::{Path};
+use std::sync::RwLock;
 use std::sync::{Mutex, atomic::{self, AtomicUsize}};
 use std::{time::Duration, cmp};
 use std::env;
@@ -95,6 +96,7 @@ use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, 
 const FRAME_RATE: u16 = 60;
 
 static RACK_DIR_IDX: AtomicUsize = AtomicUsize::new(0);
+static RACK_DIR_MAPPING: RwLock<Vec<usize>> = RwLock::new(vec![]);
 
 static CONTINUOUS_TIME: Mutex<Option<f64>> = Mutex::new(None);
 
@@ -153,7 +155,7 @@ fn load_rack(mut commands: Commands, asset_server: Res<AssetServer>, mut setting
     }
 }
 fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>, mut state: ResMut<NextState<AppState>>, mut q_window: Query<&mut Window, With<PrimaryWindow>>, mut exit: EventWriter<AppExit>) {
-    match h_rack_main.get_load_state(asset_server) {
+    match h_rack_main.get_load_state(&asset_server) {
         Some(LoadState::Failed) => {
             let rack_path = if let Some(rack_path) = env::args().nth(1) {
                 rack_path
@@ -161,6 +163,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                 "racks/".to_string()
             };
             error!("Invalid file path: {}", rack_path);
+            error!("Working directory: {:?}", env::current_dir());
             error!("Check whether you need to enable a feature");
             exit.send(AppExit);
         },
@@ -168,7 +171,25 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
         Some(LoadState::Loaded) => {},
     }
 
-    if let Some((_, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
+    if RACK_DIR_MAPPING.read().unwrap().is_empty() {
+        if let Ok(mut rdm) = RACK_DIR_MAPPING.write() {
+            let mut racks_sorted = racks.iter_mut()
+                .map(|(id, r)| {
+                    r.path = asset_server.get_path(id).map(|ap| ap.to_string());
+                    &r.path
+                }).enumerate()
+                .collect::<Vec<(usize, &Option<String>)>>();
+            racks_sorted.sort_by(|(_, p1), (_, p2)| p1.cmp(p2));
+            *rdm = racks_sorted.iter()
+                .inspect(|(idx, p)| eprintln!("rack {idx}: {p:?}"))
+                .map(|(idx, _)| *idx)
+                .collect();
+        }
+    }
+
+    let rdm = RACK_DIR_MAPPING.read().unwrap();
+    let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
+    if let Some((_, rack)) = racks.iter_mut().nth(idx) {
         // Init rack info
         let rack_path = if let Some(rack_path) = env::args().nth(1) {
             rack_path
@@ -355,7 +376,9 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
     }
 }
 fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>, q_main_camera: Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>, mut state: ResMut<NextState<AppState>>) {
-    if let Some((_, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
+    let rdm = RACK_DIR_MAPPING.read().unwrap();
+    let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
+    if let Some((_, rack)) = racks.iter_mut().nth(idx) {
         // Patch cables
         let colors = [
             Color::RED,
@@ -415,35 +438,37 @@ fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut me
 }
 
 fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Rack>>, mut racks: ResMut<Assets<Rack>>, mut state: ResMut<NextState<AppState>>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, q_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>) {
+    let rdm = RACK_DIR_MAPPING.read().unwrap();
+    let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
+    let (rid, rack) = racks.iter_mut().nth(idx).unwrap();
+
     for ev in ev_asset.read() {
         if let AssetEvent::Modified { id } = ev {
-            if let Some((rid, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
-                if rid == *id {
-                    if rack.modules.iter()
-                        .any(|m| {
-                            !m.1.is_init()
-                        })
-                    {
-                        if let Some(AppState::Loading) = &state.0 {
-                            return;
-                        }
-
-                        for ent in &q_any {
-                            if let Some(ent) = commands.get_entity(ent) {
-                                ent.despawn_recursive();
-                            }
-                        }
-
-                        for window in &q_windows {
-                            if let Some(window) = commands.get_entity(window) {
-                                window.despawn_recursive();
-                            }
-                        }
-
-                        info!("Reloading rack...");
-
-                        state.set(AppState::Loading);
+            if rid == *id {
+                if rack.modules.iter()
+                    .any(|m| {
+                        !m.1.is_init()
+                    })
+                {
+                    if let Some(AppState::Loading) = &state.0 {
+                        return;
                     }
+
+                    for ent in &q_any {
+                        if let Some(ent) = commands.get_entity(ent) {
+                            ent.despawn_recursive();
+                        }
+                    }
+
+                    for window in &q_windows {
+                        if let Some(window) = commands.get_entity(window) {
+                            window.despawn_recursive();
+                        }
+                    }
+
+                    info!("Reloading rack...");
+
+                    state.set(AppState::Loading);
                 }
             }
         }
@@ -470,7 +495,9 @@ fn continuous_step(time: &Res<Time>, dt: f64, rack: &mut Rack, st: StepType) {
     rack.step(t, st);
 }
 fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>) {
-    if let Some((_, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
+    let rdm = RACK_DIR_MAPPING.read().unwrap();
+    let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
+    if let Some((_, rack)) = racks.iter_mut().nth(idx) {
         if let Some(audio_context) = &rack.audio_context {
             let sr = audio_context.output.config.sample_rate.0 as u64;
             let audio_steps = sr / u64::from(FRAME_RATE);
@@ -513,12 +540,16 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>) {
     }
 }
 fn rack_render(mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut q_text: Query<&mut Text, With<ModuleTextComponent>>, mut q_image: Query<&mut UiImage, With<ModuleImageComponent>>, mut q_mesh: Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
-    if let Some((_, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
+    let rdm = RACK_DIR_MAPPING.read().unwrap();
+    let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
+    if let Some((_, rack)) = racks.iter_mut().nth(idx) {
         rack.render(&mut images, &mut meshes, &mut q_text, &mut q_image, &mut q_mesh);
     }
 }
 fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut racks: ResMut<Assets<Rack>>, mut q_windows: Query<&mut Window>, q_child_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, mut state: ResMut<NextState<AppState>>, mut exit: EventWriter<AppExit>) {
-    if let Some((_, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
+    let rdm = RACK_DIR_MAPPING.read().unwrap();
+    let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
+    if let Some((_, rack)) = racks.iter_mut().nth(idx) {
         rack.keyboard_input(&keys);
 
         if keys.just_released(KeyCode::ArrowRight) {
@@ -599,7 +630,9 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
     }
 }
 fn mouse_input(mouse_buttons: Res<ButtonInput<MouseButton>>, q_windows: Query<&Window, With<PrimaryWindow>>, mut racks: ResMut<Assets<Rack>>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>) {
-    if let Some((_, rack)) = racks.iter_mut().nth(RACK_DIR_IDX.load(atomic::Ordering::Acquire)) {
+    let rdm = RACK_DIR_MAPPING.read().unwrap();
+    let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
+    if let Some((_, rack)) = racks.iter_mut().nth(idx) {
         rack.mouse_input(&mouse_buttons, q_windows.single(), &q_child, &q_transform);
     }
 }
