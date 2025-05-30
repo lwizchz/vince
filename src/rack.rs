@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use bevy::asset::{LoadState, LoadedFolder, RecursiveDependencyLoadState};
+use bevy::asset::{AssetLoadError, LoadState, LoadedFolder, RecursiveDependencyLoadState};
 use bevy::{prelude::*, reflect::TypePath, utils::HashMap, sprite::Mesh2dHandle};
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
@@ -357,7 +357,9 @@ impl RackMainHandle {
                 Some(RecursiveDependencyLoadState::NotLoaded) => Some(LoadState::NotLoaded),
                 Some(RecursiveDependencyLoadState::Loading) => Some(LoadState::Loading),
                 Some(RecursiveDependencyLoadState::Loaded) => Some(LoadState::Loaded),
-                Some(RecursiveDependencyLoadState::Failed) => Some(LoadState::Failed),
+                Some(RecursiveDependencyLoadState::Failed) => Some(LoadState::Failed(Box::new(
+                    AssetLoadError::AssetMetaReadError
+                ))),
                 None => None,
             },
             RackMainHandle::Single(sh) => asset_server.get_load_state(sh),

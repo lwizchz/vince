@@ -18,7 +18,7 @@ None
 
 use std::collections::VecDeque;
 
-use bevy::{ecs::system::EntityCommands, prelude::*, render::{camera::{ClearColorConfig, RenderTarget}, render_asset::RenderAssetUsages, render_resource::{Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, view::RenderLayers}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}};
+use bevy::{color::palettes, ecs::system::EntityCommands, prelude::*, render::{camera::{ClearColorConfig, RenderTarget}, render_asset::RenderAssetUsages, render_resource::{Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, view::RenderLayers}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}};
 
 use serde::Deserialize;
 
@@ -122,7 +122,7 @@ impl Module for Oscilloscope {
         image.resize(size);
         let image_handle = images.add(image);
 
-        let layer = RenderLayers::layer(((id+1) % 255) as u8);
+        let layer = RenderLayers::layer((id+1) % 255);
         let mut mesh: [Mesh; Oscilloscope::MAX_GRAPHS] = vec![Mesh::new(PrimitiveTopology::LineStrip, RenderAssetUsages::all()); Oscilloscope::MAX_GRAPHS]
             .try_into()
             .unwrap();
@@ -130,10 +130,10 @@ impl Module for Oscilloscope {
             mesh[i].insert_attribute(Mesh::ATTRIBUTE_POSITION, gen_points);
         }
         let colors = [
-            Color::GREEN,
-            Color::RED,
-            Color::YELLOW,
-            Color::BLUE,
+            palettes::css::LIME,
+            palettes::css::RED,
+            palettes::css::YELLOW,
+            palettes::css::BLUE,
         ];
         self.mesh = Some(
             mesh.into_iter().enumerate()
@@ -141,7 +141,7 @@ impl Module for Oscilloscope {
                     ec.commands().spawn((
                         MaterialMesh2dBundle {
                             mesh: Mesh2dHandle(meshes.add(mesh)),
-                            material: materials.add(ColorMaterial::from(colors[i])),
+                            material: materials.add(Color::Srgba(colors[i])),
                             transform: Transform::from_xyz(-f32::from(Self::WIDTH as u16)/2.0, 0.0, 0.0)
                                 .with_scale(Vec3 {
                                     x: 1.0,
@@ -151,7 +151,7 @@ impl Module for Oscilloscope {
                             ..default()
                         },
                         ModuleMeshComponent,
-                        layer,
+                        layer.clone(),
                     )).id()
                 }).collect::<Vec<Entity>>()
                 .try_into()

@@ -72,6 +72,7 @@ example.
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+use std::num::NonZeroU8;
 use std::ops::DerefMut;
 use std::path::{Path};
 use std::sync::RwLock;
@@ -79,6 +80,7 @@ use std::sync::{Mutex, atomic::{self, AtomicUsize}};
 use std::{time::Duration, cmp};
 use std::env;
 
+use bevy::color::palettes;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
 
@@ -156,16 +158,16 @@ fn load_rack(mut commands: Commands, asset_server: Res<AssetServer>, mut setting
 }
 fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>, mut state: ResMut<NextState<AppState>>, mut q_window: Query<&mut Window, With<PrimaryWindow>>, mut exit: EventWriter<AppExit>) {
     match h_rack_main.get_load_state(&asset_server) {
-        Some(LoadState::Failed) => {
+        Some(LoadState::Failed(e)) => {
             let rack_path = if let Some(rack_path) = env::args().nth(1) {
                 rack_path
             } else {
                 "racks/".to_string()
             };
-            error!("Invalid file path: {}", rack_path);
+            error!("Failed to load path {}: {}", rack_path, e);
             error!("Working directory: {:?}", env::current_dir());
             error!("Check whether you need to enable a feature");
-            exit.send(AppExit);
+            exit.send(AppExit::Error(NonZeroU8::new(1).unwrap()));
         },
         Some(LoadState::NotLoaded | LoadState::Loading) | None => return,
         Some(LoadState::Loaded) => {},
@@ -181,7 +183,6 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                 .collect::<Vec<(usize, &Option<String>)>>();
             racks_sorted.sort_by(|(_, p1), (_, p2)| p1.cmp(p2));
             *rdm = racks_sorted.iter()
-                .inspect(|(idx, p)| eprintln!("rack {idx}: {p:?}"))
                 .map(|(idx, _)| *idx)
                 .collect();
         }
@@ -274,7 +275,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                                 overflow: Overflow::clip(),
                                 ..default()
                             },
-                            background_color: Color::DARK_GRAY.into(),
+                            background_color: Srgba::gray(0.25).into(),
                             ..default()
                         },
                         TopModuleComponent,
@@ -356,7 +357,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                                 overflow: Overflow::clip(),
                                 ..default()
                             },
-                            background_color: Color::DARK_GRAY.into(),
+                            background_color: Srgba::gray(0.25).into(),
                             ..default()
                         },
                         TopModuleComponent,
@@ -381,12 +382,12 @@ fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut me
     if let Some((_, rack)) = racks.iter_mut().nth(idx) {
         // Patch cables
         let colors = [
-            Color::RED,
-            Color::ORANGE,
-            Color::YELLOW,
-            Color::GREEN,
-            Color::BLUE,
-            Color::PURPLE,
+            palettes::css::RED,
+            palettes::css::ORANGE,
+            palettes::css::YELLOW,
+            palettes::css::LIME,
+            palettes::css::BLUE,
+            palettes::css::PURPLE,
         ];
         let mut sorted_patches = rack.patches.iter().collect::<Vec<(&ModuleKey, &ModuleKey)>>();
         sorted_patches.sort();
@@ -423,7 +424,7 @@ fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut me
                     let _component = commands.spawn((
                         MaterialMesh2dBundle {
                             mesh: meshes.add(mesh).into(),
-                            material: materials.add(colors[i % colors.len()]),
+                            material: materials.add(Color::Srgba(colors[i % colors.len()])),
                             transform: Transform::from_translation(startpos),
                             ..default()
                         },
@@ -450,7 +451,7 @@ fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Ra
                         !m.1.is_init()
                     })
                 {
-                    if let Some(AppState::Loading) = &state.0 {
+                    if let NextState::Pending(AppState::Loading) = state.as_ref() {
                         return;
                     }
 
@@ -555,7 +556,7 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
         if keys.just_released(KeyCode::ArrowRight) {
             rack.exit();
 
-            if let Some(AppState::Loading) = &state.0 {
+            if let NextState::Pending(AppState::Loading) = state.as_ref() {
                 return;
             }
 
@@ -587,7 +588,7 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
         } else if keys.just_released(KeyCode::ArrowLeft) {
             rack.exit();
 
-            if let Some(AppState::Loading) = &state.0 {
+            if let NextState::Pending(AppState::Loading) = state.as_ref() {
                 return;
             }
 
@@ -625,7 +626,7 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
             }
         } else if keys.just_released(KeyCode::Escape) {
             rack.exit();
-            exit.send(AppExit);
+            exit.send(AppExit::Success);
         }
     }
 }
@@ -640,7 +641,7 @@ fn window_resize(mut commands: Commands, mut ev_resize: EventReader<WindowResize
     for ev in ev_resize.read() {
         let WindowResized { window, width: _, height: _ } = ev;
         if q_windows.get(*window).is_ok() {
-            if let Some(AppState::Loaded) = &state.0 {
+            if let NextState::Pending(AppState::Loading) = state.as_ref() {
                 return;
             }
 
