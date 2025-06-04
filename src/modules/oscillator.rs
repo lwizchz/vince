@@ -29,7 +29,7 @@ None
 
 use std::f64::consts::PI;
 
-use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
+use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
 
@@ -74,16 +74,13 @@ pub struct Oscillator {
 }
 #[typetag::deserialize]
 impl Module for Oscillator {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ModuleComponent,
@@ -95,17 +92,19 @@ impl Module for Oscillator {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections([
-                            TextSection::new(name, ts.clone()),
-                            TextSection::new("Func\n", ts.clone()),
-                            TextSection::new("Sync\n", ts.clone()),
-                            TextSection::new("K0\n", ts.clone()),
-                            TextSection::new("K1\n", ts.clone()),
-                            TextSection::new("K2\n", ts.clone()),
-                            TextSection::new("K3\n", ts),
-                        ]),
+                        Text::new(name),
+                        tfc.0.clone(),
+                        tfc.1.clone(),
                         ModuleTextComponent,
-                    )).id()
+                    )).with_children(|p| {
+                        for t in ["Func\n", "Sync\n", "K0\n", "K1\n", "K2\n", "K3\n"] {
+                            p.spawn((
+                                TextSpan::new(t),
+                                tfc.0.clone(),
+                                tfc.1.clone(),
+                            ));
+                        }
+                    }).id()
                 );
             });
             self.component = Some(component.id());
@@ -190,15 +189,21 @@ impl Module for Oscillator {
 
         vec![val as f32]
     }
-    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
-            if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("Func: {:?}\n", self.func);
-                text.sections[2].value = format!("Sync: {:?}\n", self.sync);
-                text.sections[3].value = format!("K0 Shift: {}\n", self.knobs[0]);
-                text.sections[4].value = format!("K1 Speed: {}\n", self.knobs[1]);
-                text.sections[5].value = format!("K2 Depth: {}\n", self.knobs[2]);
-                text.sections[6].value = format!("K3 Phase: {}\n", self.knobs[3]);
+            let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
+                .filter(|c| q_textspan.contains(*c))
+                .zip([
+                    format!("Func: {:?}\n", self.func),
+                    format!("Sync: {:?}\n", self.sync),
+                    format!("K0 Shift: {}\n", self.knobs[0]),
+                    format!("K1 Speed: {}\n", self.knobs[1]),
+                    format!("K2 Depth: {}\n", self.knobs[2]),
+                    format!("K3 Phase: {}\n", self.knobs[3]),
+                ]).collect();
+            for (c, s) in textspans {
+                let mut textspan = q_textspan.get_mut(c).expect("Failed to get textspan");
+                **textspan = s;
             }
         }
     }

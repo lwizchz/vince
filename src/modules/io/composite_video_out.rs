@@ -17,7 +17,7 @@ None
 
 use std::collections::VecDeque;
 
-use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle, render::render_resource::{Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}};
+use bevy::{prelude::*, ecs::system::EntityCommands, render::render_resource::{Extent3d, TextureDescriptor, TextureFormat, TextureUsages, TextureDimension}};
 
 use serde::Deserialize;
 
@@ -52,7 +52,7 @@ impl CompositeVideoOut {
 }
 #[typetag::deserialize]
 impl Module for CompositeVideoOut {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
 
         let size = Extent3d {
@@ -79,12 +79,9 @@ impl Module for CompositeVideoOut {
 
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ModuleComponent,
@@ -96,24 +93,21 @@ impl Module for CompositeVideoOut {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections([
-                            TextSection::new(name, ts),
-                        ]),
+                        Text::new(name),
+                        tfc.0,
+                        tfc.1,
                         ModuleTextComponent,
                     )).id()
                 );
 
                 self.children.push(
                     parent.spawn((
-                        ImageBundle {
-                            style: Style {
-                                position_type: PositionType::Relative,
-                                top: Val::Px(10.0),
-                                width: Val::Px(f32::from(640u16)),
-                                height: Val::Px(f32::from(480u16)),
-                                ..default()
-                            },
-                            image: UiImage::new(image_handle.clone()),
+                        ImageNode::new(image_handle.clone()),
+                        Node {
+                            position_type: PositionType::Relative,
+                            top: Val::Px(10.0),
+                            width: Val::Px(f32::from(640u16)),
+                            height: Val::Px(f32::from(480u16)),
                             ..default()
                         },
                         ModuleImageComponent,
@@ -125,15 +119,12 @@ impl Module for CompositeVideoOut {
 
         if self.is_own_window() {
             ec.commands().spawn((
-                SpriteBundle {
-                    texture: image_handle,
-                    sprite: Sprite {
-                        custom_size: Some(Vec2::new(640.0, 480.0)),
-                        ..default()
-                    },
-                    transform: Transform::from_xyz(640.0*id as f32, 1080.0*2.0, 0.0),
+                Sprite {
+                    image: image_handle,
+                    custom_size: Some(Vec2::new(640.0, 480.0)),
                     ..default()
                 },
+                Transform::from_xyz(640.0*id as f32, 1080.0*2.0, 0.0),
                 ModuleImageWindowComponent,
             ));
         }
@@ -157,7 +148,7 @@ impl Module for CompositeVideoOut {
             if let Ok(parent) = q_child.get(component) {
                 if let Ok(pos_screen) = q_transform.get(parent.get()) {
                     if let Ok(camera) = q_camera.get_single() {
-                        if let Some(pos_world) = camera.0.viewport_to_world(camera.1, pos_screen.translation().truncate()) {
+                        if let Ok(pos_world) = camera.0.viewport_to_world(camera.1, pos_screen.translation().truncate()) {
                             return Vec3::from((pos_world.origin.truncate(), 0.0))
                                 + Vec3::new(0.0, -250.0, 0.0);
                         }
@@ -214,10 +205,10 @@ impl Module for CompositeVideoOut {
 
         vec![]
     }
-    fn render(&mut self, images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_children: &Query<&Children>, _q_textspan: &mut Query<&mut TextSpan>, q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(1) {
             if let Ok(h_image) = q_image.get_mut(*component) {
-                if let Some(image) = images.get_mut(&h_image.texture) {
+                if let Some(image) = images.get_mut(&h_image.image) {
                     for (luma, chroma) in self.luma.drain(..).zip(self.chroma.drain(..)) {
                         let y = luma.1;
                         let c = chroma.1;

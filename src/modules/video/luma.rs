@@ -38,16 +38,13 @@ pub struct Luma {
 }
 #[typetag::deserialize]
 impl Module for Luma {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ModuleComponent,
@@ -59,9 +56,9 @@ impl Module for Luma {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections([
-                            TextSection::new(name, ts),
-                        ]),
+                        Text::new(name),
+                        tfc.0,
+                        tfc.1,
                         ModuleTextComponent,
                     )).id()
                 );

@@ -18,7 +18,7 @@ None
 
 use std::collections::VecDeque;
 
-use bevy::{color::palettes, ecs::system::EntityCommands, prelude::*, render::{camera::{ClearColorConfig, RenderTarget}, render_asset::RenderAssetUsages, render_resource::{Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, view::RenderLayers}, sprite::{MaterialMesh2dBundle, Mesh2dHandle}};
+use bevy::{color::palettes, ecs::system::EntityCommands, prelude::*, render::{camera::{ClearColorConfig, RenderTarget}, render_asset::RenderAssetUsages, render_resource::{Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, view::RenderLayers}};
 
 use serde::Deserialize;
 
@@ -98,7 +98,7 @@ impl Oscilloscope {
 }
 #[typetag::deserialize]
 impl Module for Oscilloscope {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
 
         let size = Extent3d {
@@ -139,17 +139,14 @@ impl Module for Oscilloscope {
             mesh.into_iter().enumerate()
                 .map(|(i, mesh)| {
                     ec.commands().spawn((
-                        MaterialMesh2dBundle {
-                            mesh: Mesh2dHandle(meshes.add(mesh)),
-                            material: materials.add(Color::Srgba(colors[i])),
-                            transform: Transform::from_xyz(-f32::from(Self::WIDTH as u16)/2.0, 0.0, 0.0)
-                                .with_scale(Vec3 {
-                                    x: 1.0,
-                                    y: 0.5,
-                                    z: 1.0,
-                                }),
-                            ..default()
-                        },
+                        Mesh2d(meshes.add(mesh)),
+                        MeshMaterial2d(materials.add(Color::Srgba(colors[i]))),
+                        Transform::from_xyz(-f32::from(Self::WIDTH as u16)/2.0, 0.0, 0.0)
+                            .with_scale(Vec3 {
+                                x: 1.0,
+                                y: 0.5,
+                                z: 1.0,
+                            }),
                         ModuleMeshComponent,
                         layer.clone(),
                     )).id()
@@ -158,13 +155,11 @@ impl Module for Oscilloscope {
                 .unwrap()
         );
         ec.commands().spawn((
-            Camera2dBundle {
-                camera: Camera {
-                    order: -1,
-                    target: RenderTarget::Image(image_handle.clone()),
-                    clear_color: ClearColorConfig::Custom(Color::BLACK),
-                    ..default()
-                },
+            Camera2d,
+            Camera {
+                order: -1,
+                target: RenderTarget::Image(image_handle.clone()),
+                clear_color: ClearColorConfig::Custom(Color::BLACK),
                 ..default()
             },
             CameraComponent,
@@ -173,12 +168,9 @@ impl Module for Oscilloscope {
 
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ModuleComponent,
@@ -190,26 +182,29 @@ impl Module for Oscilloscope {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections([
-                            TextSection::new(name, ts.clone()),
-                            TextSection::new("Average\n", ts.clone()),
-                            TextSection::new("Max\n", ts),
-                        ]),
+                        Text::new(name),
+                        tfc.0.clone(),
+                        tfc.1.clone(),
                         ModuleTextComponent,
-                    )).id()
+                    )).with_children(|p| {
+                        for t in ["Average\n", "Max\n"] {
+                            p.spawn((
+                                TextSpan::new(t),
+                                tfc.0.clone(),
+                                tfc.1.clone(),
+                            ));
+                        }
+                    }).id()
                 );
 
                 self.children.push(
                     parent.spawn((
-                        ImageBundle {
-                            style: Style {
-                                position_type: PositionType::Relative,
-                                top: Val::Px(10.0),
-                                width: Val::Px(f32::from(Self::WIDTH as u16)),
-                                height: Val::Px(f32::from(Self::HEIGHT as u16)),
-                                ..default()
-                            },
-                            image: UiImage::new(image_handle.clone()),
+                        ImageNode::new(image_handle.clone()),
+                        Node {
+                            position_type: PositionType::Relative,
+                            top: Val::Px(10.0),
+                            width: Val::Px(f32::from(Self::WIDTH as u16)),
+                            height: Val::Px(f32::from(Self::HEIGHT as u16)),
                             ..default()
                         },
                         ModuleImageComponent,
@@ -221,15 +216,12 @@ impl Module for Oscilloscope {
 
         if self.is_own_window() {
             ec.commands().spawn((
-                SpriteBundle {
-                    texture: image_handle,
-                    sprite: Sprite {
-                        custom_size: Some(Vec2::new(150.0, 100.0)),
-                        ..default()
-                    },
-                    transform: Transform::from_xyz(640.0*id as f32, 1080.0*2.0, 0.0),
+                Sprite {
+                    image: image_handle,
+                    custom_size: Some(Vec2::new(150.0, 100.0)),
                     ..default()
                 },
+                Transform::from_xyz(640.0*id as f32, 1080.0*2.0, 0.0),
                 ModuleImageWindowComponent,
             ));
         }
@@ -288,28 +280,35 @@ impl Module for Oscilloscope {
 
         vec![]
     }
-    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
-            if let Ok(mut text) = q_text.get_mut(*component) {
-                let avg = self.vals.iter().map(|vals| {
-                    vals.back().unwrap_or(&(0.0, f32::NAN)).1
-                }).fold(0.0f32, |a, v| {
-                    if !v.is_nan() {
-                        a + v
+            let avg = self.vals.iter().map(|vals| {
+                vals.back().unwrap_or(&(0.0, f32::NAN)).1
+            }).fold(0.0f32, |a, v| {
+                if !v.is_nan() {
+                    a + v
+                } else {
+                    a
+                }
+            }) / Oscilloscope::MAX_GRAPHS as f32;
+            let max = self.max_val.iter()
+                .fold(0.0f32, |a, m| {
+                    if !m.is_nan() && *m > a {
+                        *m
                     } else {
                         a
                     }
-                }) / Oscilloscope::MAX_GRAPHS as f32;
-                let max = self.max_val.iter()
-                    .fold(0.0f32, |a, m| {
-                        if !m.is_nan() && *m > a {
-                            *m
-                        } else {
-                            a
-                        }
-                    });
-                text.sections[1].value = format!("Average: {:+}\n", avg);
-                text.sections[2].value = format!("Max: {}\n", max);
+                });
+
+            let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
+                .filter(|c| q_textspan.contains(*c))
+                .zip([
+                    format!("Average: {:+}\n", avg),
+                    format!("Max: {}\n", max),
+                ]).collect();
+            for (c, s) in textspans {
+                let mut textspan = q_textspan.get_mut(c).expect("Failed to get textspan");
+                **textspan = s;
             }
         }
 

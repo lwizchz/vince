@@ -25,7 +25,7 @@ NAN, then NANs are treated as 0.0.
 
 */
 
-use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
+use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
 
@@ -47,16 +47,13 @@ pub struct ChromaKey {
 }
 #[typetag::deserialize]
 impl Module for ChromaKey {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ModuleComponent,
@@ -68,11 +65,14 @@ impl Module for ChromaKey {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections([
-                            TextSection::new(name, ts.clone()),
-                            TextSection::new("K0\n", ts),
-                        ]),
+                        Text::new(name),
+                        tfc.0.clone(),
+                        tfc.1.clone(),
                         ModuleTextComponent,
+                    )).with_child((
+                        TextSpan::new("K0\n"),
+                        tfc.0,
+                        tfc.1,
                     )).id()
                 );
             });
@@ -142,10 +142,16 @@ impl Module for ChromaKey {
             vec![r0, g0, b0]
         }
     }
-    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
-            if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("K0 Threshold: {}\n", self.knobs[0]);
+            let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
+                .filter(|c| q_textspan.contains(*c))
+                .zip([
+                    format!("K0 Threshold: {}\n", self.knobs[0]),
+                ]).collect();
+            for (c, s) in textspans {
+                let mut textspan = q_textspan.get_mut(c).expect("Failed to get textspan");
+                **textspan = s;
             }
         }
     }

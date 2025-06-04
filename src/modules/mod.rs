@@ -6,7 +6,7 @@ specific applications. See the `audio`, `io`, and `video` submodules for the
 complete list of synth modules.
 */
 
-use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
+use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::{Deserialize, de::{Visitor, self}};
 
@@ -44,7 +44,7 @@ pub struct MouseClick {
 
 #[typetag::deserialize(tag = "type")]
 pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
-    fn init(&mut self, id: usize, ec: EntityCommands, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle);
+    fn init(&mut self, id: usize, ec: EntityCommands, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor));
     fn exit(&mut self);
 
     fn is_init(&self) -> bool {
@@ -73,7 +73,7 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
         }
 
         if let Ok(main_camera) = q_main_camera.get_single() {
-            if let Some(pos_world) = main_camera.0.viewport_to_world(main_camera.1, pos_screen) {
+            if let Ok(pos_world) = main_camera.0.viewport_to_world(main_camera.1, pos_screen) {
                 return Vec3::from((pos_world.origin.truncate(), 0.0))
                     + Vec3::new(0.0, -100.0, 0.0);
             }
@@ -124,7 +124,7 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     }
     fn mouse_click(&mut self, _mouse_click: MouseClick) {}
     fn step(&mut self, time: f64, st: StepType, ins: &[f32]) -> Vec<f32>;
-    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {}
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_children: &Query<&Children>, _q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {}
 }
 pub trait ModuleClone {
     fn clone_box(&self) -> Box<dyn Module>;

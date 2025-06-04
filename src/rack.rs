@@ -1,14 +1,14 @@
 use std::sync::{Arc, Mutex};
 
-use bevy::asset::{AssetLoadError, LoadState, LoadedFolder, RecursiveDependencyLoadState};
-use bevy::{prelude::*, reflect::TypePath, utils::HashMap, sprite::Mesh2dHandle};
+use bevy::asset::{LoadState, LoadedFolder, RecursiveDependencyLoadState};
+use bevy::{prelude::*, reflect::TypePath, utils::HashMap};
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use oddio::Signal;
 use serde::Deserialize;
 
 use crate::modules::ModuleIOK;
-use crate::{StepType, patch::Patches, modules::{ModuleKey, Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
+use crate::{StepType, patch::Patches, modules::{ModuleKey, Module, ModuleComponent, ModuleMeshComponent, ModuleImageComponent}};
 
 const AUDIO_BUFFER_SIZE: usize = 512;
 const AUDIO_STREAM_SIZE: usize = 16384;
@@ -330,9 +330,9 @@ impl Rack {
         // Remove NANs from output map
         self.outs.extract_if(|_, v| v.is_nan()).last();
     }
-    pub fn render(&mut self, images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    pub fn render(&mut self, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, q_children: Query<&Children>, mut q_textspan: Query<&mut TextSpan>, mut q_image: Query<&mut ImageNode, With<ModuleImageComponent>>, mut q_mesh: Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         for m in self.modules.values_mut() {
-            m.render(images, meshes, q_text, q_image, q_mesh);
+            m.render(&mut images, &mut meshes, &q_children, &mut q_textspan, &mut q_image, &mut q_mesh);
         }
     }
     pub fn exit(&mut self) {
@@ -357,9 +357,7 @@ impl RackMainHandle {
                 Some(RecursiveDependencyLoadState::NotLoaded) => Some(LoadState::NotLoaded),
                 Some(RecursiveDependencyLoadState::Loading) => Some(LoadState::Loading),
                 Some(RecursiveDependencyLoadState::Loaded) => Some(LoadState::Loaded),
-                Some(RecursiveDependencyLoadState::Failed) => Some(LoadState::Failed(Box::new(
-                    AssetLoadError::AssetMetaReadError
-                ))),
+                Some(RecursiveDependencyLoadState::Failed(e)) => Some(LoadState::Failed(e)),
                 None => None,
             },
             RackMainHandle::Single(sh) => asset_server.get_load_state(sh),

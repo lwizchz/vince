@@ -222,16 +222,16 @@ pub struct FileEncoder {
 }
 #[typetag::deserialize]
 impl Module for FileEncoder {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
+                    width: Val::Px(150.0),
+                    height: Val::Px(180.0),
+                    flex_wrap: FlexWrap::Wrap,
                     ..default()
                 },
                 ModuleComponent,
@@ -243,16 +243,14 @@ impl Module for FileEncoder {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections([
-                            TextSection::new(name, ts.clone()),
-                            TextSection::new(format!("{}\n", self.filename), ts),
-                        ]).with_style(Style {
-                            width: Val::Px(150.0),
-                            height: Val::Px(180.0),
-                            flex_wrap: FlexWrap::Wrap,
-                            ..default()
-                        }),
+                        Text::new(name),
+                        tfc.0.clone(),
+                        tfc.1.clone(),
                         ModuleTextComponent,
+                    )).with_child((
+                        TextSpan::new(format!("{}\n", self.filename)),
+                        tfc.0,
+                        tfc.1,
                     )).id()
                 );
             });

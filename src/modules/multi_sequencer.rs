@@ -27,7 +27,7 @@ None
 
 */
 
-use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle};
+use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
 
@@ -55,16 +55,13 @@ pub struct MultiSequencer {
 }
 #[typetag::deserialize]
 impl Module for MultiSequencer {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ModuleComponent,
@@ -76,26 +73,32 @@ impl Module for MultiSequencer {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections(
-                            std::iter::once(TextSection::new(name, ts.clone()))
-                                .chain(std::iter::once(TextSection::new("Active\n", ts.clone())))
-                                .chain(std::iter::once(TextSection::new("\nChildren:\n", ts.clone())))
-                                .chain(
-                                    self.sequencers.iter()
+                        Text::new(name),
+                        tfc.0.clone(),
+                        tfc.1.clone(),
+                        ModuleTextComponent,
+                    )).with_children(|p| {
+                        for t in ["Active\n".to_owned(), "\nChildren:\n".to_owned(), ].iter()
+                            .cloned()
+                            .chain(
+                                self.sequencers.iter()
                                         .enumerate()
-                                        .map(|(i, seq)| TextSection::new(
-                                            format!(
+                                        .map(|(i, seq)| format!(
                                                 "{} x{}\n",
                                                 seq.0.name()
                                                     .unwrap_or_else(|| format!("SEQ{i}")),
                                                 seq.1,
-                                            ),
-                                            ts.clone(),
-                                        ))
-                                )
-                        ),
-                        ModuleTextComponent,
-                    )).id()
+                                            )
+                                        )
+                            )
+                        {
+                            p.spawn((
+                                TextSpan::new(t),
+                                tfc.0.clone(),
+                                tfc.1.clone(),
+                            ));
+                        }
+                    }).id()
                 );
             });
             self.component = Some(component.id());
@@ -157,14 +160,20 @@ impl Module for MultiSequencer {
 
         vec![0.0, 0.0, 0.0]
     }
-    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
-            if let Ok(mut text) = q_text.get_mut(*component) {
-                if let Some(last_seq) = &self.last_seq {
-                    text.sections[1].value = format!("Active: {}\n", last_seq);
-                } else {
-                    text.sections[1].value = "Active: None\n".to_string();
-                }
+            let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
+                .filter(|c| q_textspan.contains(*c))
+                .zip([
+                    if let Some(last_seq) = &self.last_seq {
+                        format!("Active: {}\n", last_seq)
+                    } else {
+                        "Active: None\n".to_string()
+                    },
+                ]).collect();
+            for (c, s) in textspans {
+                let mut textspan = q_textspan.get_mut(c).expect("Failed to get textspan");
+                **textspan = s;
             }
         }
     }

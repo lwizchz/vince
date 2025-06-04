@@ -26,7 +26,7 @@ N. The signal from the Nth sample
 
 use std::path::Path;
 
-use bevy::{prelude::*, ecs::system::EntityCommands, sprite::Mesh2dHandle, utils::HashMap};
+use bevy::{prelude::*, ecs::system::EntityCommands, utils::HashMap};
 
 use serde::Deserialize;
 
@@ -68,16 +68,16 @@ impl Sampler {
 }
 #[typetag::deserialize]
 impl Module for Sampler {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
+                    width: Val::Px(150.0),
+                    height: Val::Px(180.0),
+                    flex_wrap: FlexWrap::Wrap,
                     ..default()
                 },
                 ModuleComponent,
@@ -89,20 +89,19 @@ impl Module for Sampler {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections([
-                            TextSection::new(name, ts.clone()),
-                            TextSection::new("K0\n", ts.clone()),
-                            TextSection::new("K1\n", ts.clone()),
-                            TextSection::new("Beat\n", ts.clone()),
-                            TextSection::new("Active\n", ts),
-                        ]).with_style(Style {
-                            width: Val::Px(150.0),
-                            height: Val::Px(180.0),
-                            flex_wrap: FlexWrap::Wrap,
-                            ..default()
-                        }),
+                        Text::new(name),
+                        tfc.0.clone(),
+                        tfc.1.clone(),
                         ModuleTextComponent,
-                    )).id()
+                    )).with_children(|p| {
+                        for t in ["K0\n", "K1\n", "Beat\n", "Active\n"] {
+                            p.spawn((
+                                TextSpan::new(t),
+                                tfc.0.clone(),
+                                tfc.1.clone(),
+                            ));
+                        }
+                    }).id()
                 );
             });
             self.component = Some(component.id());
@@ -193,32 +192,40 @@ impl Module for Sampler {
 
         outs
     }
-    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_text: &mut Query<&mut Text, With<ModuleTextComponent>>, _q_image: &mut Query<&mut UiImage, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+    fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(0) {
-            if let Ok(mut text) = q_text.get_mut(*component) {
-                text.sections[1].value = format!("K0 Tempo: {}\n", self.knobs[0]);
-                text.sections[2].value = format!("K1 Length: {}\n", self.knobs[1]);
+            let mut texts = vec![];
 
-                let tempo = self.knobs[0];
-                let beat = self.time * tempo as f64 / 60.0;
-                text.sections[3].value = format!("Beat: {}\n", beat.floor() as usize + 1);
+            texts.push(format!("K0 Tempo: {}\n", self.knobs[0]));
+            texts.push(format!("K1 Length: {}\n", self.knobs[1]));
 
-                if self.active_samples.is_empty() {
-                    text.sections[4].value = "Active: None\n".to_string();
-                } else {
-                    let active = self.active_samples.iter()
-                        .map(|(sidx, _)| {
-                            match Path::new(&self.samples[*sidx].0).file_prefix() {
-                                Some(fp) => fp.to_string_lossy().to_string(),
-                                None => format!("SAMP{sidx}"),
-                            }
-                        }).fold(String::new(), |mut acc, s| {
-                            acc += &s;
-                            acc += " ";
-                            acc
-                        });
-                    text.sections[4].value = format!("Active: {}\n", active);
-                }
+            let tempo = self.knobs[0];
+            let beat = self.time * tempo as f64 / 60.0;
+            texts.push(format!("Beat: {}\n", beat.floor() as usize + 1));
+
+            if self.active_samples.is_empty() {
+                texts.push("Active: None\n".to_string());
+            } else {
+                let active = self.active_samples.iter()
+                    .map(|(sidx, _)| {
+                        match Path::new(&self.samples[*sidx].0).file_prefix() {
+                            Some(fp) => fp.to_string_lossy().to_string(),
+                            None => format!("SAMP{sidx}"),
+                        }
+                    }).fold(String::new(), |mut acc, s| {
+                        acc += &s;
+                        acc += " ";
+                        acc
+                    });
+                texts.push(format!("Active: {}\n", active));
+            }
+
+            let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
+                .filter(|c| q_textspan.contains(*c))
+                .zip(texts).collect();
+            for (c, s) in textspans {
+                let mut textspan = q_textspan.get_mut(c).expect("Failed to get textspan");
+                **textspan = s;
             }
         }
     }

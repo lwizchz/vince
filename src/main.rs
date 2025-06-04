@@ -82,7 +82,7 @@ use std::env;
 
 use bevy::color::palettes;
 use bevy::render::render_asset::RenderAssetUsages;
-use bevy::{prelude::*, app::AppExit, asset::LoadState, sprite::{MaterialMesh2dBundle, Mesh2dHandle}, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
+use bevy::{prelude::*, app::AppExit, asset::LoadState, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
 
 use bevy_common_assets::toml::TomlAssetPlugin;
 
@@ -93,7 +93,7 @@ pub mod patch;
 use patch::PatchComponent;
 
 pub mod modules;
-use modules::{Module, TopModuleComponent, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent, ModuleImageWindowComponent, ModuleKey, ModuleIOK};
+use modules::{Module, TopModuleComponent, ModuleComponent, ModuleMeshComponent, ModuleImageComponent, ModuleImageWindowComponent, ModuleKey, ModuleIOK};
 
 const FRAME_RATE: u16 = 60;
 
@@ -218,24 +218,20 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
 
         // Main camera
         commands.spawn((
-            Camera2dBundle::default(),
+            Camera2d,
             CameraComponent,
             MainCameraComponent,
         ));
 
         // Module rects
-        let ts = TextStyle {
+        let tfc = (TextFont {
             font_size: 16.0,
-            color: Color::WHITE,
             ..default()
-        };
+        }, TextColor(palettes::css::WHITE.into()));
         let mut component = commands.spawn(
-            NodeBundle {
-                style: Style {
-                    flex_wrap: FlexWrap::Wrap,
-                    align_content: AlignContent::FlexStart,
-                    ..default()
-                },
+            Node {
+                flex_wrap: FlexWrap::Wrap,
+                align_content: AlignContent::FlexStart,
                 ..default()
             },
         );
@@ -258,32 +254,30 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                 m.1.init(
                     m.0.id,
                     parent.spawn((
-                        NodeBundle {
-                            style: Style {
-                                width: if m.1.is_large() {
-                                    Val::Px(660.0)
-                                } else {
-                                    Val::Px(170.0)
-                                },
-                                height: if m.1.is_large() {
-                                    Val::Px(550.0)
-                                } else {
-                                    Val::Px(200.0)
-                                },
-                                margin: UiRect::all(Val::Px(5.0)),
-                                padding: UiRect::all(Val::Px(10.0)),
-                                overflow: Overflow::clip(),
-                                ..default()
+                        Node {
+                            width: if m.1.is_large() {
+                                Val::Px(660.0)
+                            } else {
+                                Val::Px(170.0)
                             },
-                            background_color: Srgba::gray(0.25).into(),
+                            height: if m.1.is_large() {
+                                Val::Px(550.0)
+                            } else {
+                                Val::Px(200.0)
+                            },
+                            margin: UiRect::all(Val::Px(5.0)),
+                            padding: UiRect::all(Val::Px(10.0)),
+                            overflow: Overflow::clip(),
+
                             ..default()
                         },
+                        BackgroundColor(Color::Srgba(Srgba::gray(0.25).into())),
                         TopModuleComponent,
                     )),
                     &mut images,
                     &mut meshes,
                     &mut materials,
-                    ts.clone(),
+                    tfc.clone(),
                 );
             }
         });
@@ -312,27 +306,25 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                     }
                 ).id();
                 let _child_camera = commands.spawn((
-                    Camera2dBundle {
-                        camera: Camera {
-                            target: RenderTarget::Window(WindowRef::Entity(child_window)),
-                            ..default()
-                        },
-                        transform: Transform::from_xyz(640.0*m.0.id as f32, 1080.0*2.0, 1.0),
-                        projection: OrthographicProjection {
-                            scaling_mode: if m.1.is_large() {
-                                ScalingMode::Fixed {
-                                    width: 640.0,
-                                    height: 480.0,
-                                }
-                            } else {
-                                ScalingMode::Fixed {
-                                    width: 150.0,
-                                    height: 100.0,
-                                }
-                            },
-                            ..default()
-                        },
+                    Camera2d,
+                    Camera {
+                        target: RenderTarget::Window(WindowRef::Entity(child_window)),
                         ..default()
+                    },
+                    Transform::from_xyz(640.0*m.0.id as f32, 1080.0*2.0, 1.0),
+                    OrthographicProjection {
+                        scaling_mode: if m.1.is_large() {
+                            ScalingMode::Fixed {
+                                width: 640.0,
+                                height: 480.0,
+                            }
+                        } else {
+                            ScalingMode::Fixed {
+                                width: 150.0,
+                                height: 100.0,
+                            }
+                        },
+                        ..OrthographicProjection::default_2d()
                     },
                     CameraComponent,
                 ));
@@ -340,32 +332,29 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                 m.1.init(
                     m.0.id,
                     commands.entity(child_window).commands().spawn((
-                        NodeBundle {
-                            style: Style {
-                                width: if m.1.is_large() {
-                                    Val::Px(660.0)
-                                } else {
-                                    Val::Px(170.0)
-                                },
-                                height: if m.1.is_large() {
-                                    Val::Px(550.0)
-                                } else {
-                                    Val::Px(200.0)
-                                },
-                                margin: UiRect::all(Val::Px(5.0)),
-                                padding: UiRect::all(Val::Px(10.0)),
-                                overflow: Overflow::clip(),
-                                ..default()
+                        Node {
+                            width: if m.1.is_large() {
+                                Val::Px(660.0)
+                            } else {
+                                Val::Px(170.0)
                             },
-                            background_color: Srgba::gray(0.25).into(),
+                            height: if m.1.is_large() {
+                                Val::Px(550.0)
+                            } else {
+                                Val::Px(200.0)
+                            },
+                            margin: UiRect::all(Val::Px(5.0)),
+                            padding: UiRect::all(Val::Px(10.0)),
+                            overflow: Overflow::clip(),
                             ..default()
                         },
+                        BackgroundColor(Color::Srgba(Srgba::gray(0.25).into())),
                         TopModuleComponent,
                     )),
                     &mut images,
                     &mut meshes,
                     &mut materials,
-                    ts.clone(),
+                    tfc.clone(),
                 );
             }
         }
@@ -422,12 +411,9 @@ fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut me
                     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, points);
 
                     let _component = commands.spawn((
-                        MaterialMesh2dBundle {
-                            mesh: meshes.add(mesh).into(),
-                            material: materials.add(Color::Srgba(colors[i % colors.len()])),
-                            transform: Transform::from_translation(startpos),
-                            ..default()
-                        },
+                        Mesh2d(meshes.add(mesh)),
+                        MeshMaterial2d(materials.add(Color::Srgba(colors[i % colors.len()]))),
+                        Transform::from_translation(startpos),
                         PatchComponent,
                     ));
                 }
@@ -488,7 +474,7 @@ fn continuous_step(time: &Res<Time>, dt: f64, rack: &mut Rack, st: StepType) {
             *t
         },
         ct @ None => {
-            *ct = Some(time.elapsed_seconds_wrapped_f64());
+            *ct = Some(time.elapsed_secs_wrapped_f64());
             ct.unwrap()
         },
     };
@@ -540,11 +526,11 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>) {
         }
     }
 }
-fn rack_render(mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut q_text: Query<&mut Text, With<ModuleTextComponent>>, mut q_image: Query<&mut UiImage, With<ModuleImageComponent>>, mut q_mesh: Query<&mut Mesh2dHandle, With<ModuleMeshComponent>>) {
+fn rack_render(mut racks: ResMut<Assets<Rack>>, images: ResMut<Assets<Image>>, meshes: ResMut<Assets<Mesh>>, q_children: Query<&Children>, q_textspan: Query<&mut TextSpan>, q_image: Query<&mut ImageNode, With<ModuleImageComponent>>, q_mesh: Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
     let rdm = RACK_DIR_MAPPING.read().unwrap();
     let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
     if let Some((_, rack)) = racks.iter_mut().nth(idx) {
-        rack.render(&mut images, &mut meshes, &mut q_text, &mut q_image, &mut q_mesh);
+        rack.render(images, meshes, q_children, q_textspan, q_image, q_mesh);
     }
 }
 fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut racks: ResMut<Assets<Rack>>, mut q_windows: Query<&mut Window>, q_child_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, mut state: ResMut<NextState<AppState>>, mut exit: EventWriter<AppExit>) {
@@ -615,7 +601,7 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
                 if window.focused {
                     match window.mode {
                         WindowMode::Windowed => {
-                            window.mode = WindowMode::BorderlessFullscreen;
+                            window.mode = WindowMode::BorderlessFullscreen(MonitorSelection::Current);
                         },
                         _ => {
                             window.mode = WindowMode::Windowed;

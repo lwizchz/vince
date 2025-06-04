@@ -47,16 +47,16 @@ impl Info {
 }
 #[typetag::deserialize]
 impl Module for Info {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
+                    width: Val::Px(150.0),
+                    height: Val::Px(180.0),
+                    flex_wrap: FlexWrap::Wrap,
                     ..default()
                 },
                 ModuleComponent,
@@ -68,20 +68,21 @@ impl Module for Info {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections(
-                            std::iter::once(TextSection::new(name, ts.clone()))
-                                .chain(
-                                    self.info.iter()
-                                        .map(|(k, v)| TextSection::new(format!("{k}: {v}\n"), ts.clone()))
-                                )
-                        ).with_style(Style {
-                            width: Val::Px(150.0),
-                            height: Val::Px(180.0),
-                            flex_wrap: FlexWrap::Wrap,
-                            ..default()
-                        }),
+                        Text::new(name),
+                        tfc.0.clone(),
+                        tfc.1.clone(),
                         ModuleTextComponent,
-                    )).id()
+                    )).with_children(|p| {
+                        for t in self.info.iter()
+                            .map(|(k, v)| format!("{k}: {v}\n"))
+                        {
+                            p.spawn((
+                                TextSpan::new(t),
+                                tfc.0.clone(),
+                                tfc.1.clone(),
+                            ));
+                        }
+                    }).id()
                 );
             });
             self.component = Some(component.id());
