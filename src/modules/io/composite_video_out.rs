@@ -74,7 +74,7 @@ impl Module for CompositeVideoOut {
             ..default()
         };
         image.resize(size);
-        image.data = [0, 0, 0, 255].repeat(image.data.len() / 4);
+        image.data = Some([0, 0, 0, 255].repeat(image.data.map_or(0, |d| d.len()) / 4));
         let image_handle = images.add(image);
 
         ec.with_children(|parent| {
@@ -143,11 +143,11 @@ impl Module for CompositeVideoOut {
     fn is_own_window(&self) -> bool {
         self.is_own_window
     }
-    fn get_world_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
+    fn get_world_pos(&self, q_child: &Query<&ChildOf, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
         if let Some(component) = self.component() {
             if let Ok(parent) = q_child.get(component) {
-                if let Ok(pos_screen) = q_transform.get(parent.get()) {
-                    if let Ok(camera) = q_camera.get_single() {
+                if let Ok(pos_screen) = q_transform.get(parent.parent()) {
+                    if let Ok(camera) = q_camera.single() {
                         if let Ok(pos_world) = camera.0.viewport_to_world(camera.1, pos_screen.translation().truncate()) {
                             return Vec3::from((pos_world.origin.truncate(), 0.0))
                                 + Vec3::new(0.0, -250.0, 0.0);
@@ -221,12 +221,17 @@ impl Module for CompositeVideoOut {
                         let g = ((y - 0.2748*i - 0.6357*q)*255.0) as u8;
                         let b = ((y - 1.1*i + 1.7*q)*255.0) as u8;
 
-                        image.data[self.scan] = r;
-                        image.data[self.scan+1] = g;
-                        image.data[self.scan+2] = b;
-                        image.data[self.scan+3] = 255;
+                        match &mut image.data {
+                            Some(d) => {
+                                d[self.scan] = r;
+                                d[self.scan+1] = g;
+                                d[self.scan+2] = b;
+                                d[self.scan+3] = 255;
 
-                        self.scan = (self.scan+4) % image.data.len();
+                                self.scan = (self.scan+4) % d.len();
+                            },
+                            None => {},
+                        }
                     }
                 }
             }

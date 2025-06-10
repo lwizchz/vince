@@ -26,7 +26,7 @@ N. The signal from the Nth sample
 
 use std::path::Path;
 
-use bevy::{prelude::*, ecs::system::EntityCommands, utils::HashMap};
+use bevy::{prelude::*, ecs::system::EntityCommands, platform::collections::HashMap};
 
 use serde::Deserialize;
 

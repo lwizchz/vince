@@ -1,6 +1,6 @@
 [package]
 name = "vince"
-version = "0.4.12"
+version = "0.4.13"
 edition = "2021"
 authors = ["Louise Montalvo <louanmontalvo@gmail.com>"]
 license = "MIT"
@@ -17,9 +17,9 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-bevy = { version = "0.15.3" }
-bevy_common_assets = { version = "0.12.0", features = ["toml"] }
-bevy_framepace = "0.18.0"
+bevy = { version = "0.16.1" }
+bevy_common_assets = { version = "0.13.0", features = ["toml"] }
+bevy_framepace = "0.19.0"
 cpal = "0.15.2"
 hound = { version = "3.5.0", optional = true }
 image = { version = "0.24.7", optional = true }

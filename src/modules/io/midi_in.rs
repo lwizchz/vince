@@ -27,7 +27,7 @@ None
 
 use std::{sync::{Mutex, Arc}, collections::VecDeque};
 
-use bevy::{prelude::*, ecs::system::EntityCommands, utils::HashMap};
+use bevy::{prelude::*, ecs::system::EntityCommands, platform::collections::HashMap};
 
 use midly::{live::LiveEvent, num::{u4, u7}, MidiMessage};
 use serde::Deserialize;

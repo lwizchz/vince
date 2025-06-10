@@ -14,7 +14,7 @@ None
 
 */
 
-use bevy::{prelude::*, ecs::system::EntityCommands, utils::HashMap};
+use bevy::{prelude::*, ecs::system::EntityCommands, platform::collections::HashMap};
 
 use serde::Deserialize;
 

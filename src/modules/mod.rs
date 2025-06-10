@@ -56,23 +56,23 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     fn is_own_window(&self) -> bool {
         false
     }
-    fn get_screen_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) -> Vec2 {
+    fn get_screen_pos(&self, q_child: &Query<&ChildOf, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) -> Vec2 {
         if let Some(component) = self.component() {
             if let Ok(parent) = q_child.get(component) {
-                if let Ok(pos_screen) = q_transform.get(parent.get()) {
+                if let Ok(pos_screen) = q_transform.get(parent.parent()) {
                     return pos_screen.translation().truncate();
                 }
             }
         }
         Vec2::ZERO
     }
-    fn get_world_pos(&self, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_main_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
+    fn get_world_pos(&self, q_child: &Query<&ChildOf, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>, q_main_camera: &Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>) -> Vec3 {
         let pos_screen = self.get_screen_pos(q_child, q_transform);
         if pos_screen == Vec2::ZERO {
             return Vec3::ZERO;
         }
 
-        if let Ok(main_camera) = q_main_camera.get_single() {
+        if let Ok(main_camera) = q_main_camera.single() {
             if let Ok(pos_world) = main_camera.0.viewport_to_world(main_camera.1, pos_screen) {
                 return Vec3::from((pos_world.origin.truncate(), 0.0))
                     + Vec3::new(0.0, -100.0, 0.0);
@@ -100,7 +100,7 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
     fn extend_audio_buffer(&mut self, _ai: &[f32]) {}
 
     fn keyboard_input(&mut self, _keys: &Res<ButtonInput<KeyCode>>) {}
-    fn mouse_input(&mut self, mouse_buttons: &Res<ButtonInput<MouseButton>>, window: &Window, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
+    fn mouse_input(&mut self, mouse_buttons: &Res<ButtonInput<MouseButton>>, window: &Window, q_child: &Query<&ChildOf, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
         if let Some(mpos) = window.cursor_position() {
             let screen_pos = self.get_screen_pos(q_child, q_transform);
             let (w, h) = if self.is_large() {

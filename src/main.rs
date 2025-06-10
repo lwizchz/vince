@@ -152,7 +152,7 @@ fn load_rack(mut commands: Commands, asset_server: Res<AssetServer>, mut setting
     };
     commands.insert_resource(h_rack_main);
 
-    if let Ok(mut window) = q_window.get_single_mut() {
+    if let Ok(mut window) = q_window.single_mut() {
         window.title = format!("Vince Audio-Video Synth - {rack_path}");
     }
 }
@@ -167,7 +167,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
             error!("Failed to load path {}: {}", rack_path, e);
             error!("Working directory: {:?}", env::current_dir());
             error!("Check whether you need to enable a feature");
-            exit.send(AppExit::Error(NonZeroU8::new(1).unwrap()));
+            exit.write(AppExit::Error(NonZeroU8::new(1).unwrap()));
         },
         Some(LoadState::NotLoaded | LoadState::Loading) | None => return,
         Some(LoadState::Loaded) => {},
@@ -198,7 +198,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
             "racks/".to_string()
         };
         let mut window_title = format!("Vince Audio-Video Synth - {rack_path}");
-        if let Ok(mut window) = q_window.get_single_mut() {
+        if let Ok(mut window) = q_window.single_mut() {
             if let Some(name) = rack.info.get("name") {
                 window_title = format!("Vince Audio-Video Synth - {name} - {rack_path}");
             } else if let Some(path) = &rack.path {
@@ -312,7 +312,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                         ..default()
                     },
                     Transform::from_xyz(640.0*m.0.id as f32, 1080.0*2.0, 1.0),
-                    OrthographicProjection {
+                    Projection::from(OrthographicProjection {
                         scaling_mode: if m.1.is_large() {
                             ScalingMode::Fixed {
                                 width: 640.0,
@@ -325,7 +325,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                             }
                         },
                         ..OrthographicProjection::default_2d()
-                    },
+                    }),
                     CameraComponent,
                 ));
 
@@ -365,7 +365,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
         state.set(AppState::Loaded);
     }
 }
-fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>, q_main_camera: Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>, mut state: ResMut<NextState<AppState>>) {
+fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, q_child: Query<&ChildOf, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>, q_main_camera: Query<(&Camera, &GlobalTransform), With<MainCameraComponent>>, mut state: ResMut<NextState<AppState>>) {
     let rdm = RACK_DIR_MAPPING.read().unwrap();
     let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
     if let Some((_, rack)) = racks.iter_mut().nth(idx) {
@@ -442,14 +442,14 @@ fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Ra
                     }
 
                     for ent in &q_any {
-                        if let Some(ent) = commands.get_entity(ent) {
-                            ent.despawn_recursive();
+                        if let Ok(mut ent) = commands.get_entity(ent) {
+                            ent.despawn();
                         }
                     }
 
                     for window in &q_windows {
-                        if let Some(window) = commands.get_entity(window) {
-                            window.despawn_recursive();
+                        if let Ok(mut window) = commands.get_entity(window) {
+                            window.despawn();
                         }
                     }
 
@@ -547,14 +547,14 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
             }
 
             for ent in &q_any {
-                if let Some(ent) = commands.get_entity(ent) {
-                    ent.despawn_recursive();
+                if let Ok(mut ent) = commands.get_entity(ent) {
+                    ent.despawn();
                 }
             }
 
             for window in &q_child_windows {
-                if let Some(window) = commands.get_entity(window) {
-                    window.despawn_recursive();
+                if let Ok(mut window) = commands.get_entity(window) {
+                    window.despawn();
                 }
             }
 
@@ -579,14 +579,14 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
             }
 
             for ent in &q_any {
-                if let Some(ent) = commands.get_entity(ent) {
-                    ent.despawn_recursive();
+                if let Ok(mut ent) = commands.get_entity(ent) {
+                    ent.despawn();
                 }
             }
 
             for window in &q_child_windows {
-                if let Some(window) = commands.get_entity(window) {
-                    window.despawn_recursive();
+                if let Ok(mut window) = commands.get_entity(window) {
+                    window.despawn();
                 }
             }
 
@@ -612,15 +612,17 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
             }
         } else if keys.just_released(KeyCode::Escape) {
             rack.exit();
-            exit.send(AppExit::Success);
+            exit.write(AppExit::Success);
         }
     }
 }
-fn mouse_input(mouse_buttons: Res<ButtonInput<MouseButton>>, q_windows: Query<&Window, With<PrimaryWindow>>, mut racks: ResMut<Assets<Rack>>, q_child: Query<&Parent, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>) {
+fn mouse_input(mouse_buttons: Res<ButtonInput<MouseButton>>, q_windows: Query<&Window, With<PrimaryWindow>>, mut racks: ResMut<Assets<Rack>>, q_child: Query<&ChildOf, With<ModuleComponent>>, q_transform: Query<&GlobalTransform>) {
     let rdm = RACK_DIR_MAPPING.read().unwrap();
     let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
     if let Some((_, rack)) = racks.iter_mut().nth(idx) {
-        rack.mouse_input(&mouse_buttons, q_windows.single(), &q_child, &q_transform);
+        if let Ok(window) = q_windows.single() {
+            rack.mouse_input(&mouse_buttons, window, &q_child, &q_transform);
+        }
     }
 }
 fn window_resize(mut commands: Commands, mut ev_resize: EventReader<WindowResized>, q_windows: Query<&PrimaryWindow>, q_patches: Query<Entity, With<PatchComponent>>, mut state: ResMut<NextState<AppState>>) {
@@ -632,8 +634,8 @@ fn window_resize(mut commands: Commands, mut ev_resize: EventReader<WindowResize
             }
 
             for patch in &q_patches {
-                if let Some(patch) = commands.get_entity(patch) {
-                    patch.despawn_recursive();
+                if let Ok(mut patch) = commands.get_entity(patch) {
+                    patch.despawn();
                 }
             }
 

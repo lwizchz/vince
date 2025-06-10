@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use bevy::asset::{LoadState, LoadedFolder, RecursiveDependencyLoadState};
-use bevy::{prelude::*, reflect::TypePath, utils::HashMap};
+use bevy::{prelude::*, reflect::TypePath, platform::collections::HashMap};
 
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use oddio::Signal;
@@ -171,7 +171,7 @@ impl Rack {
             m.keyboard_input(keys);
         }
     }
-    pub fn mouse_input(&mut self, mouse_buttons: &Res<ButtonInput<MouseButton>>, window: &Window, q_child: &Query<&Parent, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
+    pub fn mouse_input(&mut self, mouse_buttons: &Res<ButtonInput<MouseButton>>, window: &Window, q_child: &Query<&ChildOf, With<ModuleComponent>>, q_transform: &Query<&GlobalTransform>) {
         for m in self.modules.values_mut() {
             m.mouse_input(mouse_buttons, window, q_child, q_transform);
         }
