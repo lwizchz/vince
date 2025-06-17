@@ -74,8 +74,11 @@ pub trait Module: std::fmt::Debug + ModuleClone + Send + Sync {
 
         if let Ok(main_camera) = q_main_camera.single() {
             if let Ok(pos_world) = main_camera.0.viewport_to_world(main_camera.1, pos_screen) {
-                return Vec3::from((pos_world.origin.truncate(), 0.0))
-                    + Vec3::new(0.0, -100.0, 0.0);
+                return Vec3::new(
+                    pos_world.origin.x / 2.0 - 320.0,
+                    pos_world.origin.y / 2.0 + 100.0,
+                    0.0,
+                );
             }
         }
         Vec3::ZERO

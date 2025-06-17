@@ -283,6 +283,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
         });
 
         // Init modules which have their own window
+        let p = component.id();
         for m in &mut sorted_modules {
             if m.1.is_own_window() {
                 let mname = m.1.name()
@@ -350,6 +351,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                         },
                         BackgroundColor(Color::Srgba(Srgba::gray(0.25).into())),
                         TopModuleComponent,
+                        ChildOf(p),
                     )),
                     &mut images,
                     &mut meshes,
