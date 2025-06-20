@@ -22,8 +22,8 @@ bevy_common_assets = { version = "0.13.0", features = ["toml"] }
 bevy_framepace = "0.19.0"
 cpal = "0.16.0"
 hound = { version = "3.5.1", optional = true }
-image = { version = "0.24.7", optional = true }
-midir = { version = "0.9.1", optional = true }
+image = { version = "0.25.6", optional = true }
+midir = { version = "0.10.1", optional = true }
 midly = { version = "0.5.3", optional = true }
 nokhwa = { version = "0.10.4", optional = true, features = ["input-native", "output-threaded"] }
 oddio = "0.6.2"
