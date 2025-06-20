@@ -35,15 +35,15 @@ use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
 
-use screenshots::Screen;
+use xcap::Monitor;
 use nokhwa::Camera;
 
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, component_video_out::ComponentVideoOut}};
 
 #[derive(Clone)]
 struct ScreenSource {
-    screen: Screen,
-    images: Arc<Mutex<Vec<screenshots::Image>>>,
+    screen: Monitor,
+    images: Arc<Mutex<Vec<image::RgbaImage>>>,
 }
 impl std::fmt::Debug for ScreenSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -98,8 +98,9 @@ impl VideoIn {
             VideoSource::Screen(screen) => {
                 if screen.is_none() {
                     *screen = Some(ScreenSource {
-                        screen: *Screen::all().expect("Failed to get screens for video input")
-                            .first().expect("Failed to get screens for video input"),
+                        screen: Monitor::all().expect("Failed to get screens for video input")
+                            .first().expect("Failed to get screens for video input")
+                            .clone(),
                         images: Arc::new(Mutex::new(vec![])),
                     });
                 }
@@ -109,7 +110,7 @@ impl VideoIn {
                     let images = screen.images.clone();
                     std::thread::spawn(move || {
                         let image = screen.screen
-                            .capture_area(0, 0, ComponentVideoOut::WIDTH as u32, ComponentVideoOut::HEIGHT as u32)
+                            .capture_region(0, 0, ComponentVideoOut::WIDTH as u32, ComponentVideoOut::HEIGHT as u32)
                             .expect("Failed to capture screen for video input");
                         if let Ok(mut images) = images.lock() {
                             images.push(image);
@@ -160,16 +161,13 @@ impl VideoIn {
 }
 #[typetag::deserialize]
 impl Module for VideoIn {
-    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, ts: TextStyle) {
+    fn init(&mut self, id: usize, mut ec: EntityCommands, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _materials: &mut ResMut<Assets<ColorMaterial>>, tfc: (TextFont, TextColor)) {
         self.id = Some(id);
         ec.with_children(|parent| {
             let mut component = parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        position_type: PositionType::Relative,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
                 ModuleComponent,
@@ -181,9 +179,9 @@ impl Module for VideoIn {
                 };
                 self.children.push(
                     parent.spawn((
-                        TextBundle::from_sections([
-                            TextSection::new(name, ts),
-                        ]),
+                        Text::new(name),
+                        tfc.0,
+                        tfc.1,
                         ModuleTextComponent,
                     )).id()
                 );
@@ -231,8 +229,9 @@ impl Module for VideoIn {
                 if let Some(screen) = screen {
                     if let Ok(mut images) = screen.images.try_lock() {
                         for image in images.drain(..) {
-                            if self.video_buffer.len() < image.rgba().len() {
-                                self.video_buffer.extend(image.rgba());
+                            let downscaled = image::imageops::resize(&image, ComponentVideoOut::WIDTH as u32, ComponentVideoOut::HEIGHT as u32, image::imageops::FilterType::Nearest);
+                            if self.video_buffer.len() < downscaled.as_raw().len() {
+                                self.video_buffer.extend(downscaled.as_raw());
                             }
                         }
                     }
