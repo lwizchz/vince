@@ -1,6 +1,6 @@
 [package]
 name = "vince"
-version = "0.4.16"
+version = "0.4.17"
 edition = "2021"
 authors = ["Louise Montalvo <louanmontalvo@gmail.com>"]
 license = "MIT"
@@ -25,8 +25,8 @@ hound = { version = "3.5.1", optional = true }
 image = { version = "0.25.6", optional = true }
 midir = { version = "0.10.1", optional = true }
 midly = { version = "0.5.3", optional = true }
-nokhwa = { version = "0.10.4", optional = true, features = ["input-native", "output-threaded"] }
-oddio = "0.6.2"
+nokhwa = { version = "0.10.7", optional = true, features = ["input-native", "output-threaded"] }
+oddio = "0.7.4"
 rand = "0.8.5"
 rustfft = { version = "6.1.0", optional = true }
 screenshots = { version = "0.7.3", optional = true }

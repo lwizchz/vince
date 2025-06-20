@@ -4022,9 +4022,9 @@ dependencies = [
 
 [[package]]
 name = "oddio"
-version = "0.6.2"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0f3379cc7e854d0b0d4a0e310f276faafc46896843b720efe4646faa1b0c734"
+checksum = "c287b2b60511f53bd87e59adca987a46d4bdde6f16ad5cfa89531bffca344cf2"
 dependencies = [
  "mint",
 ]
@@ -5428,7 +5428,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vince"
-version = "0.4.16"
+version = "0.4.17"
 dependencies = [
  "bevy",
  "bevy_common_assets",

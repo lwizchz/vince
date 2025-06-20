@@ -20,7 +20,7 @@ pub struct AudioContextOutput {
     _device: cpal::Device,
     pub(crate) config: cpal::StreamConfig,
 
-    buf_stream_handle: oddio::Handle<oddio::Stream<[f32; 2]>>,
+    buf_stream_control: oddio::StreamControl<[f32; 2]>,
     buffer: Vec<[f32; 2]>,
 }
 pub struct AudioContextInput {
@@ -69,13 +69,13 @@ impl Rack {
             buffer_size: cpal::BufferSize::Default,
         };
 
-        let (out_buf_stream_handle, out_buf_stream) = oddio::split(oddio::Stream::<[f32; 2]>::new(sample_rate.0, AUDIO_STREAM_SIZE));
+        let (out_buf_stream_control, mut out_buf_stream) = oddio::Stream::<[f32; 2]>::new(sample_rate.0, AUDIO_STREAM_SIZE);
 
         let out_stream = out_device.build_output_stream(
             &out_config,
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                 let frames = oddio::frame_stereo(data);
-                oddio::run(&out_buf_stream, sample_rate.0, frames);
+                oddio::run(&mut out_buf_stream, sample_rate.0, frames);
             },
             |err| {
                 error!("{err}");
@@ -157,7 +157,7 @@ impl Rack {
             output: AudioContextOutput {
                 _device: out_device,
                 config: out_config,
-                buf_stream_handle: out_buf_stream_handle,
+                buf_stream_control: out_buf_stream_control,
                 buffer: vec![],
             },
             input,
@@ -279,12 +279,11 @@ impl Rack {
                 let frames = oddio::Frames::from_slice(sr, &audio_context.output.buffer);
                 let signal = oddio::FramesSignal::from(frames);
 
-                let reinhard = oddio::Reinhard::new(signal);
+                let mut reinhard = oddio::Reinhard::new(signal);
 
                 let mut samples = [[0.0; 2]; AUDIO_BUFFER_SIZE];
                 reinhard.sample(1.0 / sr as f32, &mut samples);
-                audio_context.output.buf_stream_handle
-                    .control::<oddio::Stream<_>, _>()
+                audio_context.output.buf_stream_control
                     .write(&samples);
 
                 audio_context.output.buffer = Vec::with_capacity(AUDIO_BUFFER_SIZE);
