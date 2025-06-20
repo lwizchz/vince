@@ -38,7 +38,7 @@ use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent}};
 
 #[derive(Default, Clone)]
 struct MidiInputContext {
-    ports_names_conns: Vec<(MidiInputPort, String, Arc<Mutex<MidiInputConnection<()>>>)>,
+    ports_names_conns: Vec<(MidiInputPort, String, Arc<Mutex<Option<MidiInputConnection<()>>>>)>,
     events: Arc<Mutex<VecDeque<(u4, MidiMessage)>>>,
 }
 impl std::fmt::Debug for MidiInputContext {
@@ -68,6 +68,56 @@ pub struct MidiIn {
     controllers: HashMap<u7, u7>,
     #[serde(skip)]
     bend: f32,
+}
+impl MidiIn {
+    fn init_midi(&mut self) -> Result<usize, midir::InitError> {
+        if !self.midi_context.ports_names_conns.is_empty() {
+            return Ok(self.midi_context.ports_names_conns.len());
+        }
+
+        let mut midi_in = MidiInput::new("Vince MidiIn")?;
+        midi_in.ignore(midir::Ignore::None);
+
+        for (i, in_port) in midi_in.ports()
+            .iter().enumerate()
+        {
+            let in_port_name = midi_in.port_name(in_port)
+                .unwrap_or_else(|msg| panic!("Failed to get MIDI Input name for port with index {}: {}", i, msg));
+            let events = self.midi_context.events.clone();
+            let conn_in = midi_in.connect(in_port, "vince-midi-in", move |_, message, _| {
+                let event = LiveEvent::parse(message)
+                    .unwrap_or_else(|msg| panic!("Failed to parse MIDI event: {:?}: {}", message, msg));
+                match event {
+                    LiveEvent::Midi { channel, message } => {
+                        if let Ok(mut events) = events.try_lock() {
+                            events.push_back((channel, message));
+                        }
+                    },
+                    _ => info!("Unhandled MIDI event: {:?}", event),
+                }
+            }, ()).unwrap_or_else(|msg| panic!("Failed to connect to MIDI port with index {}: {}", i, msg));
+
+            self.midi_context.ports_names_conns.push((
+                in_port.clone(),
+                in_port_name,
+                Arc::new(Mutex::new(Some(conn_in))),
+            ));
+
+            midi_in = MidiInput::new("Vince MidiIn")?;
+            midi_in.ignore(midir::Ignore::None);
+        }
+
+        self.controllers.insert(u7::from(1), u7::from(0));
+        self.controllers.insert(u7::from(2), u7::from(0));
+        self.controllers.insert(u7::from(3), u7::from(0));
+        self.controllers.insert(u7::from(4), u7::from(0));
+        self.controllers.insert(u7::from(5), u7::from(0));
+        self.controllers.insert(u7::from(6), u7::from(0));
+        self.controllers.insert(u7::from(7), u7::from(0));
+        self.controllers.insert(u7::from(8), u7::from(0));
+
+        Ok(self.midi_context.ports_names_conns.len())
+    }
 }
 #[typetag::deserialize]
 impl Module for MidiIn {
@@ -100,49 +150,25 @@ impl Module for MidiIn {
         });
 
         if self.midi_context.ports_names_conns.is_empty() {
-            let mut midi_in = MidiInput::new("Vince MidiIn").expect("Failed to init MIDI Input");
-            midi_in.ignore(midir::Ignore::None);
-
-            for (i, in_port) in midi_in.ports()
-                .iter().enumerate()
-            {
-                let in_port_name = midi_in.port_name(in_port)
-                    .unwrap_or_else(|msg| panic!("Failed to get MIDI Input name for port with index {}: {}", i, msg));
-                let events = self.midi_context.events.clone();
-                let conn_in = midi_in.connect(in_port, "vince-midi-in", move |_, message, _| {
-                    let event = LiveEvent::parse(message)
-                        .unwrap_or_else(|msg| panic!("Failed to parse MIDI event: {:?}: {}", message, msg));
-                    match event {
-                        LiveEvent::Midi { channel, message } => {
-                            if let Ok(mut events) = events.try_lock() {
-                                events.push_back((channel, message));
-                            }
-                        },
-                        _ => info!("Unhandled MIDI event: {:?}", event),
-                    }
-                }, ()).unwrap_or_else(|msg| panic!("Failed to connect to MIDI port with index {}: {}", i, msg));
-
-                self.midi_context.ports_names_conns.push((
-                    in_port.clone(),
-                    in_port_name,
-                    Arc::new(Mutex::new(conn_in)),
-                ));
-
-                midi_in = MidiInput::new("Vince MidiIn").expect("Failed to init MIDI Input");
-                midi_in.ignore(midir::Ignore::None);
+            if let Err(e) = self.init_midi() {
+                warn!("Failed to init MIDI Input: {e}");
             }
-
-            self.controllers.insert(u7::from(1), u7::from(0));
-            self.controllers.insert(u7::from(2), u7::from(0));
-            self.controllers.insert(u7::from(3), u7::from(0));
-            self.controllers.insert(u7::from(4), u7::from(0));
-            self.controllers.insert(u7::from(5), u7::from(0));
-            self.controllers.insert(u7::from(6), u7::from(0));
-            self.controllers.insert(u7::from(7), u7::from(0));
-            self.controllers.insert(u7::from(8), u7::from(0));
         }
     }
     fn exit(&mut self) {
+        for (_, _, mic) in self.midi_context.ports_names_conns.drain(..) {
+            if let Ok(mut mic) = mic.lock() {
+                if let Some(mic) = mic.take() {
+                    mic.close();
+                }
+            }
+        }
+
+        if let Ok(mut events) = self.midi_context.events.lock() {
+            events.clear();
+        }
+        self.controllers.clear();
+
         self.id = None;
         self.component = None;
         self.children = vec![];
@@ -169,6 +195,13 @@ impl Module for MidiIn {
     }
 
     fn step(&mut self, _time: f64, st: StepType, _ins: &[f32]) -> Vec<f32> {
+        if self.midi_context.ports_names_conns.is_empty() {
+            if let Err(e) = self.init_midi() {
+                warn!("Failed to init MIDI Input: {e}");
+                return vec![f32::NAN; 10];
+            }
+        }
+
         if st == StepType::Video {
             return vec![f32::NAN; 10];
         }
