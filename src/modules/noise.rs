@@ -19,10 +19,9 @@ None
 
 */
 
-use rand::prelude::*;
-
 use bevy::{prelude::*, ecs::system::EntityCommands};
 
+use rand::Rng;
 use serde::Deserialize;
 
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};
@@ -119,7 +118,7 @@ impl Module for Noise {
 
     fn step(&mut self, time: f64, _st: StepType, _ins: &[f32]) -> Vec<f32> {
         match self.func {
-            NoiseFunc::White => vec![thread_rng().gen_range(-1.0..=1.0) * self.knobs[0]],
+            NoiseFunc::White => vec![rand::rng().random_range(-1.0..=1.0) * self.knobs[0]],
             // NoiseFunc::Fractional(_p) => {
             //     // FIXME actually do this
             //     vec![thread_rng().gen_range(-1.0..=1.0) * self.knobs[0]]

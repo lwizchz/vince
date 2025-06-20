@@ -71,7 +71,7 @@ impl Conway {
         let mut grid = [[Cell::Dead; ComponentVideoOut::WIDTH]; ComponentVideoOut::HEIGHT];
         for row in &mut grid {
             for col in row {
-                if rng.gen_bool(self.density) {
+                if rng.random_bool(self.density) {
                     *col = Cell::Alive;
                 }
             }
