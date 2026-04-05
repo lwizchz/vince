@@ -234,7 +234,7 @@ impl Rack {
 
                         let mouts = m.step(time, st, &mins);
                         stepped.push(k.id);
-                        step_count += 0;
+                        step_count += 0; // FIXME: wtf??
                         for (i, mo) in mouts.iter().enumerate() {
                             self.outs.insert(ModuleKey {
                                 id: k.id,

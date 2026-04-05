@@ -18,7 +18,7 @@ None
 
 use std::collections::VecDeque;
 
-use bevy::{color::palettes, ecs::system::EntityCommands, prelude::*, render::{camera::{ClearColorConfig, RenderTarget}, render_asset::RenderAssetUsages, render_resource::{Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}, view::RenderLayers}};
+use bevy::{color::palettes, ecs::system::EntityCommands, prelude::*, camera::{ClearColorConfig, RenderTarget, visibility::RenderLayers}, asset::RenderAssetUsages, render::{render_resource::{Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages}}};
 
 use serde::Deserialize;
 

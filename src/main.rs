@@ -58,7 +58,6 @@ example.
 #![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 #![feature(iter_array_chunks)]
-#![feature(path_file_prefix)]
 
 #![deny(rust_2018_idioms)]
 #![allow(elided_lifetimes_in_paths)]
@@ -81,8 +80,8 @@ use std::{time::Duration, cmp};
 use std::env;
 
 use bevy::color::palettes;
-use bevy::render::render_asset::RenderAssetUsages;
-use bevy::{prelude::*, app::AppExit, asset::LoadState, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology, camera::{RenderTarget, ScalingMode}}};
+use bevy::asset::RenderAssetUsages;
+use bevy::{prelude::*, app::AppExit, asset::LoadState, window::{PrimaryWindow, WindowResolution, PresentMode, WindowRef, WindowMode, WindowResized}, render::{render_resource::PrimitiveTopology}, camera::{RenderTarget, ScalingMode}};
 
 use bevy_common_assets::toml::TomlAssetPlugin;
 
@@ -156,7 +155,7 @@ fn load_rack(mut commands: Commands, asset_server: Res<AssetServer>, mut setting
         window.title = format!("Vince Audio-Video Synth - {rack_path}");
     }
 }
-fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>, mut state: ResMut<NextState<AppState>>, mut q_window: Query<&mut Window, With<PrimaryWindow>>, mut exit: EventWriter<AppExit>) {
+fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: ResMut<Assets<Rack>>, mut images: ResMut<Assets<Image>>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>, mut state: ResMut<NextState<AppState>>, mut q_window: Query<&mut Window, With<PrimaryWindow>>, mut exit: MessageWriter<AppExit>) {
     match h_rack_main.get_load_state(&asset_server) {
         Some(LoadState::Failed(e)) => {
             let rack_path = if let Some(rack_path) = env::args().nth(1) {
@@ -298,9 +297,9 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                     Window {
                         title: format!("{} - {}", window_title, mname),
                         resolution: if m.1.is_large() {
-                            WindowResolution::new(640.0, 480.0)
+                            WindowResolution::new(640, 480)
                         } else {
-                            WindowResolution::new(150.0, 100.0)
+                            WindowResolution::new(150, 100)
                         },
                         present_mode: PresentMode::AutoNoVsync,
                         ..default()
@@ -426,7 +425,7 @@ fn setup_patches(mut commands: Commands, mut racks: ResMut<Assets<Rack>>, mut me
     }
 }
 
-fn rack_reloader(mut commands: Commands, mut ev_asset: EventReader<AssetEvent<Rack>>, mut racks: ResMut<Assets<Rack>>, mut state: ResMut<NextState<AppState>>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, q_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>) {
+fn rack_reloader(mut commands: Commands, mut ev_asset: MessageReader<AssetEvent<Rack>>, mut racks: ResMut<Assets<Rack>>, mut state: ResMut<NextState<AppState>>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, q_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>) {
     let rdm = RACK_DIR_MAPPING.read().unwrap();
     let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
     let (rid, rack) = racks.iter_mut().nth(idx).unwrap();
@@ -535,7 +534,7 @@ fn rack_render(mut racks: ResMut<Assets<Rack>>, images: ResMut<Assets<Image>>, m
         rack.render(images, meshes, q_children, q_textspan, q_image, q_mesh);
     }
 }
-fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut racks: ResMut<Assets<Rack>>, mut q_windows: Query<&mut Window>, q_child_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, mut state: ResMut<NextState<AppState>>, mut exit: EventWriter<AppExit>) {
+fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut racks: ResMut<Assets<Rack>>, mut q_windows: Query<&mut Window>, q_child_windows: Query<Entity, (With<Window>, Without<PrimaryWindow>)>, q_any: Query<Entity, Or::<(With<CameraComponent>, With<TopModuleComponent>, With<ModuleMeshComponent>, With<ModuleImageWindowComponent>, With<PatchComponent>)>>, mut state: ResMut<NextState<AppState>>, mut exit: MessageWriter<AppExit>) {
     let rdm = RACK_DIR_MAPPING.read().unwrap();
     let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
     if let Some((_, rack)) = racks.iter_mut().nth(idx) {
@@ -627,7 +626,7 @@ fn mouse_input(mouse_buttons: Res<ButtonInput<MouseButton>>, q_windows: Query<&W
         }
     }
 }
-fn window_resize(mut commands: Commands, mut ev_resize: EventReader<WindowResized>, q_windows: Query<&PrimaryWindow>, q_patches: Query<Entity, With<PatchComponent>>, mut state: ResMut<NextState<AppState>>) {
+fn window_resize(mut commands: Commands, mut ev_resize: MessageReader<WindowResized>, q_windows: Query<&PrimaryWindow>, q_patches: Query<Entity, With<PatchComponent>>, mut state: ResMut<NextState<AppState>>) {
     for ev in ev_resize.read() {
         let WindowResized { window, width: _, height: _ } = ev;
         if q_windows.get(*window).is_ok() {
