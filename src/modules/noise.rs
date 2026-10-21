@@ -21,7 +21,7 @@ None
 
 use bevy::{prelude::*, ecs::system::EntityCommands};
 
-use rand::Rng;
+use rand::RngExt;
 use serde::Deserialize;
 
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleMeshComponent, ModuleImageComponent}};

@@ -69,13 +69,13 @@ impl Rack {
             buffer_size: cpal::BufferSize::Default,
         };
 
-        let (out_buf_stream_control, mut out_buf_stream) = oddio::Stream::<[f32; 2]>::new(sample_rate.0, AUDIO_STREAM_SIZE);
+        let (out_buf_stream_control, mut out_buf_stream) = oddio::Stream::<[f32; 2]>::new(sample_rate, AUDIO_STREAM_SIZE);
 
         let out_stream = out_device.build_output_stream(
-            &out_config,
+            out_config,
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                 let frames = oddio::frame_stereo(data);
-                oddio::run(&mut out_buf_stream, sample_rate.0, frames);
+                oddio::run(&mut out_buf_stream, sample_rate, frames);
             },
             |err| {
                 error!("{err}");
@@ -101,7 +101,7 @@ impl Rack {
 
                 let in_stream = if in_channels == 1 {
                     in_device.build_input_stream(
-                        &in_config,
+                        in_config,
                         move |data: &[f32], _: &cpal::InputCallbackInfo| {
                             if let Ok(mut buf) = inbuf.lock() {
                                 buf.extend(data);
@@ -116,7 +116,7 @@ impl Rack {
                     ).unwrap()
                 } else if in_channels == 2 {
                     in_device.build_input_stream(
-                        &in_config,
+                        in_config,
                         move |data: &[f32], _: &cpal::InputCallbackInfo| {
                             if let Ok(mut buf) = inbuf.lock() {
                                 buf.extend(
@@ -275,7 +275,7 @@ impl Rack {
 
             audio_context.output.buffer.extend(ao);
             if audio_context.output.buffer.len() == AUDIO_BUFFER_SIZE {
-                let sr = audio_context.output.config.sample_rate.0;
+                let sr = audio_context.output.config.sample_rate;
                 let frames = oddio::Frames::from_slice(sr, &audio_context.output.buffer);
                 let signal = oddio::FramesSignal::from(frames);
 

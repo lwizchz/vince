@@ -16,9 +16,11 @@ simulation.
 
 */
 
+use std::sync::Arc;
+
 use bevy::{prelude::*, ecs::system::EntityCommands};
 
-use rand::Rng;
+use rand::RngExt;
 use serde::Deserialize;
 
 use crate::{StepType, modules::{Module, ModuleComponent, ModuleTextComponent, ModuleImageComponent, ModuleMeshComponent, component_video_out::ComponentVideoOut}};
@@ -53,7 +55,7 @@ pub struct Conway {
     #[serde(default = "default_half")]
     density: f64,
     #[serde(skip)]
-    rng: Option<rand::rngs::StdRng>,
+    rng: Option<Arc<rand::rngs::StdRng>>,
     #[serde(skip)]
     grid: Option<[[Cell; ComponentVideoOut::WIDTH]; ComponentVideoOut::HEIGHT]>,
     #[serde(skip)]
@@ -76,7 +78,7 @@ impl Conway {
                 }
             }
         }
-        self.rng = Some(rng);
+        self.rng = Some(Arc::new(rng));
         self.grid = Some(grid);
     }
 }

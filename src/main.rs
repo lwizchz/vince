@@ -483,7 +483,7 @@ fn rack_stepper(time: Res<Time>, mut racks: ResMut<Assets<Rack>>) {
     let idx = rdm[RACK_DIR_IDX.load(atomic::Ordering::Acquire)];
     if let Some((_, rack)) = racks.iter_mut().nth(idx) {
         if let Some(audio_context) = &rack.audio_context {
-            let sr = audio_context.output.config.sample_rate.0 as u64;
+            let sr = audio_context.output.config.sample_rate as u64;
             let audio_steps = sr / u64::from(FRAME_RATE);
 
             match rack.info.get("mode").map(|m| m.as_str()) {
