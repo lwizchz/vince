@@ -158,10 +158,10 @@ impl Module for Oscilloscope {
             Camera2d,
             Camera {
                 order: -1,
-                target: RenderTarget::Image(image_handle.clone().into()),
                 clear_color: ClearColorConfig::Custom(Color::BLACK),
                 ..default()
             },
+            RenderTarget::Image(image_handle.clone().into()),
             CameraComponent,
             layer,
         ));

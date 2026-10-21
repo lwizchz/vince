@@ -306,10 +306,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                 ).id();
                 let _child_camera = commands.spawn((
                     Camera2d,
-                    Camera {
-                        target: RenderTarget::Window(WindowRef::Entity(child_window)),
-                        ..default()
-                    },
+                    RenderTarget::Window(WindowRef::Entity(child_window)),
                     Transform::from_xyz(640.0*m.0.id as f32, 1080.0*2.0, 1.0),
                     Projection::from(OrthographicProjection {
                         scaling_mode: if m.1.is_large() {
