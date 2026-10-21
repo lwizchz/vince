@@ -315,7 +315,7 @@ impl Module for Oscilloscope {
         for (i, gen_points) in self.gen_points().into_iter().enumerate() {
             if let Some(component) = self.mesh {
                 if let Ok(h_mesh) = q_mesh.get_mut(component[i]) {
-                    if let Some(mesh) = meshes.get_mut(&h_mesh.0) {
+                    if let Some(mut mesh) = meshes.get_mut(&h_mesh.0) {
                         if let Some(attr) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) {
                             *attr = gen_points.into();
                         }

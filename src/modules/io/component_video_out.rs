@@ -210,7 +210,7 @@ impl Module for ComponentVideoOut {
     fn render(&mut self, images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_children: &Query<&Children>, _q_textspan: &mut Query<&mut TextSpan>, q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(1) {
             if let Ok(h_image) = q_image.get_mut(*component) {
-                if let Some(image) = images.get_mut(&h_image.image) {
+                if let Some(mut image) = images.get_mut(&h_image.image) {
                     for rgb in self.rgb.drain(..) {
                         let r = (rgb.1[0] * 255.0) as u8;
                         let g = (rgb.1[1] * 255.0) as u8;

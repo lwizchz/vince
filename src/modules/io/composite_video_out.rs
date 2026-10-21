@@ -208,7 +208,7 @@ impl Module for CompositeVideoOut {
     fn render(&mut self, images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, _q_children: &Query<&Children>, _q_textspan: &mut Query<&mut TextSpan>, q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
         if let Some(component) = self.children.get(1) {
             if let Ok(h_image) = q_image.get_mut(*component) {
-                if let Some(image) = images.get_mut(&h_image.image) {
+                if let Some(mut image) = images.get_mut(&h_image.image) {
                     for (luma, chroma) in self.luma.drain(..).zip(self.chroma.drain(..)) {
                         let y = luma.1;
                         let c = chroma.1;
