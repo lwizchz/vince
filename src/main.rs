@@ -55,7 +55,6 @@ example.
 
 */
 
-#![feature(type_alias_impl_trait)]
 #![feature(impl_trait_in_assoc_type)]
 #![feature(iter_array_chunks)]
 
@@ -562,7 +561,7 @@ fn keyboard_input(mut commands: Commands, keys: Res<ButtonInput<KeyCode>>, mut r
             info!("Loading next rack...");
 
             RACK_DIR_IDX.fetch_add(1, atomic::Ordering::AcqRel);
-            RACK_DIR_IDX.fetch_update(
+            RACK_DIR_IDX.try_update(
                 atomic::Ordering::Release,
                 atomic::Ordering::Acquire,
                 |mut idx| {

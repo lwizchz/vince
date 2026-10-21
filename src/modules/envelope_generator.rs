@@ -20,8 +20,6 @@ parameters.
 
 */
 
-use std::f32::EPSILON;
-
 use bevy::{prelude::*, ecs::system::EntityCommands};
 
 use serde::Deserialize;
@@ -210,7 +208,7 @@ impl Module for EnvelopeGenerator {
             self.last_level = Some(x);
         }
 
-        if y.abs() < EPSILON {
+        if y.abs() < f32::EPSILON {
             y = 0.0;
         }
 
