@@ -52,7 +52,7 @@ impl Module for Inverter {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).id()
                 );

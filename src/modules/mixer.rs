@@ -3,19 +3,13 @@ The `Mixer` module takes up to 8 inputs and adds them together, applying a
 separate gain to each.
 
 ## Inputs
-0. First signal
-1. Second signal
-...
-7. Eighth signal
+0-7. Eight signals
 
 ## Outputs
 0. The combined signal
 
 ## Knobs
-0. Gain for Input 0 in the range [0.0, inf)
-1. Gain for Input 1 in the range [0.0, inf)
-...
-7. Gain for Input 7 in the range [0.0, inf)
+0-7. Gains for Inputs 0 to 7 in the range [0.0, inf)
 
 */
 
@@ -61,14 +55,14 @@ impl Module for Mixer {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_children(|p| {
                         for t in ["K0\n", "K1\n", "K2\n", "K3\n", "K4\n", "K5\n", "K6\n", "K7\n"] {
                             p.spawn((
                                 TextSpan::new(t),
                                 tfc.0.clone(),
-                                tfc.1.clone(),
+                                tfc.1,
                             ));
                         }
                     }).id()
@@ -125,7 +119,7 @@ impl Module for Mixer {
         ]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>,  _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
-        if let Some(component) = self.children.get(0) {
+        if let Some(component) = self.children.first() {
             let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
                 .filter(|c| q_textspan.contains(*c))
                 .zip([

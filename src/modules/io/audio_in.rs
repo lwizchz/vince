@@ -61,7 +61,7 @@ impl Module for AudioIn {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_child((
                         TextSpan::new("K0\n"),
@@ -122,7 +122,7 @@ impl Module for AudioIn {
         }
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
-        if let Some(component) = self.children.get(0) {
+        if let Some(component) = self.children.first() {
             let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
                 .filter(|c| q_textspan.contains(*c))
                 .zip([

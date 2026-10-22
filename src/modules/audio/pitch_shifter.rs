@@ -93,14 +93,14 @@ impl Module for PitchShifter {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_children(|p| {
                         for t in ["Func\n", "K0\n"] {
                             p.spawn((
                                 TextSpan::new(t),
                                 tfc.0.clone(),
-                                tfc.1.clone(),
+                                tfc.1,
                             ));
                         }
                     }).id()
@@ -205,8 +205,7 @@ impl Module for PitchShifter {
                 self.bin_energies.reverse();
 
                 if shift != 0.0 {
-                    let mut out_buffer = self.out_buffer.drain(..)
-                        .collect::<Vec<Complex<f32>>>();
+                    let mut out_buffer = std::mem::take(&mut self.out_buffer);
                     self.out_buffer = vec![Complex { re: 0.0, im: 0.0 }; PitchShifter::BUFSIZE];
                     for (bin, v) in out_buffer.drain(..)
                         .enumerate()
@@ -248,7 +247,7 @@ impl Module for PitchShifter {
         unreachable!();
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
-        if let Some(component) = self.children.get(0) {
+        if let Some(component) = self.children.first() {
             let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
                 .filter(|c| q_textspan.contains(*c))
                 .zip([

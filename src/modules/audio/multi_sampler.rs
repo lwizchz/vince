@@ -18,10 +18,7 @@ All samplers must have the same amount of samples.
 None
 
 ## Outputs
-0. The signal from the first sample
-1. The signal from the second sample
-...
-N. The signal from the Nth sample
+0-N. The signals from the samples
 
 ## Knobs
 None
@@ -76,7 +73,7 @@ impl Module for MultiSampler {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_children(|p| {
                         for t in ["Active\n".to_owned(), "\nChildren:\n".to_owned(), ].iter()
@@ -96,7 +93,7 @@ impl Module for MultiSampler {
                             p.spawn((
                                 TextSpan::new(t),
                                 tfc.0.clone(),
-                                tfc.1.clone(),
+                                tfc.1,
                             ));
                         }
                     }).id()
@@ -167,7 +164,7 @@ impl Module for MultiSampler {
         vec![0.0, 0.0, 0.0]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
-        if let Some(component) = self.children.get(0) {
+        if let Some(component) = self.children.first() {
             let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
                 .filter(|c| q_textspan.contains(*c))
                 .zip([

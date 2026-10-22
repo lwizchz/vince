@@ -63,7 +63,7 @@ impl Module for AudioOut {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_child((
                         TextSpan::new("K0\n"),
@@ -109,7 +109,7 @@ impl Module for AudioOut {
     }
 
     fn drain_audio_buffer(&mut self) -> Vec<[f32; 2]> {
-        self.audio_buffer.drain(..).collect()
+        std::mem::take(&mut self.audio_buffer)
     }
 
     fn step(&mut self, _time: f64, st: StepType, ins: &[f32]) -> Vec<f32> {
@@ -132,7 +132,7 @@ impl Module for AudioOut {
         vec![]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
-        if let Some(component) = self.children.get(0) {
+        if let Some(component) = self.children.first() {
             let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
                 .filter(|c| q_textspan.contains(*c))
                 .zip([

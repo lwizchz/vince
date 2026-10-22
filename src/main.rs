@@ -64,7 +64,6 @@ example.
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
-#![allow(clippy::needless_pass_by_value)]
 
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]
@@ -179,7 +178,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                     &r.path
                 }).enumerate()
                 .collect::<Vec<(usize, &Option<String>)>>();
-            racks_sorted.sort_by(|(_, p1), (_, p2)| p1.cmp(p2));
+            racks_sorted.sort_by_key(|(_, p)| *p);
             *rdm = racks_sorted.iter()
                 .map(|(idx, _)| *idx)
                 .collect();
@@ -269,7 +268,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
 
                             ..default()
                         },
-                        BackgroundColor(Color::Srgba(Srgba::gray(0.25).into())),
+                        BackgroundColor(Color::Srgba(Srgba::gray(0.25))),
                         TopModuleComponent,
                     )),
                     &mut images,
@@ -344,7 +343,7 @@ fn setup(mut commands: Commands, h_rack_main: Res<RackMainHandle>, mut racks: Re
                             overflow: Overflow::clip(),
                             ..default()
                         },
-                        BackgroundColor(Color::Srgba(Srgba::gray(0.25).into())),
+                        BackgroundColor(Color::Srgba(Srgba::gray(0.25))),
                         TopModuleComponent,
                         ChildOf(p),
                     )),
@@ -428,32 +427,30 @@ fn rack_reloader(mut commands: Commands, mut ev_asset: MessageReader<AssetEvent<
 
     for ev in ev_asset.read() {
         if let AssetEvent::Modified { id } = ev {
-            if rid == *id {
-                if rack.modules.iter()
-                    .any(|m| {
-                        !m.1.is_init()
-                    })
-                {
-                    if let NextState::Pending(AppState::Loading) = state.as_ref() {
-                        return;
-                    }
-
-                    for ent in &q_any {
-                        if let Ok(mut ent) = commands.get_entity(ent) {
-                            ent.despawn();
-                        }
-                    }
-
-                    for window in &q_windows {
-                        if let Ok(mut window) = commands.get_entity(window) {
-                            window.despawn();
-                        }
-                    }
-
-                    info!("Reloading rack...");
-
-                    state.set(AppState::Loading);
+            if rid == *id && rack.modules.iter()
+                .any(|m| {
+                    !m.1.is_init()
+                })
+            {
+                if let NextState::Pending(AppState::Loading) = state.as_ref() {
+                    return;
                 }
+
+                for ent in &q_any {
+                    if let Ok(mut ent) = commands.get_entity(ent) {
+                        ent.despawn();
+                    }
+                }
+
+                for window in &q_windows {
+                    if let Ok(mut window) = commands.get_entity(window) {
+                        window.despawn();
+                    }
+                }
+
+                info!("Reloading rack...");
+
+                state.set(AppState::Loading);
             }
         }
     }

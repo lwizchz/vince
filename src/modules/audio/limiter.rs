@@ -55,14 +55,14 @@ impl Module for Limiter {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_children(|p| {
                         for t in ["K0\n", "K1\n"] {
                             p.spawn((
                                 TextSpan::new(t),
                                 tfc.0.clone(),
-                                tfc.1.clone(),
+                                tfc.1,
                             ));
                         }
                     }).id()
@@ -127,7 +127,7 @@ impl Module for Limiter {
         }
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
-        if let Some(component) = self.children.get(0) {
+        if let Some(component) = self.children.first() {
             let textspans: Vec<(Entity, String)> = q_children.iter_descendants(*component)
                 .filter(|c| q_textspan.contains(*c))
                 .zip([

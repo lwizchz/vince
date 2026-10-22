@@ -64,13 +64,13 @@ impl Module for Info {
             component.with_children(|parent| {
                 let name = match &self.name {
                     Some(name) => format!("{name}\n"),
-                    None => format!("Info\n"),
+                    None => "Info\n".to_string(),
                 };
                 self.children.push(
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_children(|p| {
                         for t in self.info.iter()
@@ -79,7 +79,7 @@ impl Module for Info {
                             p.spawn((
                                 TextSpan::new(t),
                                 tfc.0.clone(),
-                                tfc.1.clone(),
+                                tfc.1,
                             ));
                         }
                     }).id()

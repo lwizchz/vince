@@ -221,16 +221,13 @@ impl Module for CompositeVideoOut {
                         let g = ((y - 0.2748*i - 0.6357*q)*255.0) as u8;
                         let b = ((y - 1.1*i + 1.7*q)*255.0) as u8;
 
-                        match &mut image.data {
-                            Some(d) => {
-                                d[self.scan] = r;
-                                d[self.scan+1] = g;
-                                d[self.scan+2] = b;
-                                d[self.scan+3] = 255;
+                        if let Some(d) = &mut image.data {
+                            d[self.scan] = r;
+                            d[self.scan+1] = g;
+                            d[self.scan+2] = b;
+                            d[self.scan+3] = 255;
 
-                                self.scan = (self.scan+4) % d.len();
-                            },
-                            None => {},
+                            self.scan = (self.scan+4) % d.len();
                         }
                     }
                 }

@@ -13,10 +13,7 @@ quarter note.
 None
 
 ## Outputs
-0. The signal from the first sample
-1. The signal from the second sample
-...
-N. The signal from the Nth sample
+0-N. The signals from the samples
 
 ## Knobs
 0. Tempo in the range (0.0, inf)
@@ -91,14 +88,14 @@ impl Module for Sampler {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_children(|p| {
                         for t in ["K0\n", "K1\n", "Beat\n", "Active\n"] {
                             p.spawn((
                                 TextSpan::new(t),
                                 tfc.0.clone(),
-                                tfc.1.clone(),
+                                tfc.1,
                             ));
                         }
                     }).id()
@@ -193,7 +190,7 @@ impl Module for Sampler {
         outs
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, _meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, _q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
-        if let Some(component) = self.children.get(0) {
+        if let Some(component) = self.children.first() {
             let mut texts = vec![];
 
             texts.push(format!("K0 Tempo: {}\n", self.knobs[0]));

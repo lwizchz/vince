@@ -216,16 +216,13 @@ impl Module for ComponentVideoOut {
                         let g = (rgb.1[1] * 255.0) as u8;
                         let b = (rgb.1[2] * 255.0) as u8;
 
-                        match &mut image.data {
-                            Some(d) => {
-                                d[self.scan] = r;
-                                d[self.scan+1] = g;
-                                d[self.scan+2] = b;
-                                d[self.scan+3] = 255;
+                        if let Some(d) = &mut image.data {
+                            d[self.scan] = r;
+                            d[self.scan+1] = g;
+                            d[self.scan+2] = b;
+                            d[self.scan+3] = 255;
 
-                                self.scan = (self.scan+4) % d.len();
-                            },
-                            None => {},
+                            self.scan = (self.scan+4) % d.len();
                         }
                     }
                 }

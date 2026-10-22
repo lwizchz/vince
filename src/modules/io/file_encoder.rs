@@ -245,7 +245,7 @@ impl Module for FileEncoder {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_child((
                         TextSpan::new(format!("{}\n", self.filename)),

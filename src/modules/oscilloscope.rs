@@ -184,14 +184,14 @@ impl Module for Oscilloscope {
                     parent.spawn((
                         Text::new(name),
                         tfc.0.clone(),
-                        tfc.1.clone(),
+                        tfc.1,
                         ModuleTextComponent,
                     )).with_children(|p| {
                         for t in ["Average\n", "Max\n"] {
                             p.spawn((
                                 TextSpan::new(t),
                                 tfc.0.clone(),
-                                tfc.1.clone(),
+                                tfc.1,
                             ));
                         }
                     }).id()
@@ -281,7 +281,7 @@ impl Module for Oscilloscope {
         vec![]
     }
     fn render(&mut self, _images: &mut ResMut<Assets<Image>>, meshes: &mut ResMut<Assets<Mesh>>, q_children: &Query<&Children>, q_textspan: &mut Query<&mut TextSpan>, _q_image: &mut Query<&mut ImageNode, With<ModuleImageComponent>>, q_mesh: &mut Query<&mut Mesh2d, With<ModuleMeshComponent>>) {
-        if let Some(component) = self.children.get(0) {
+        if let Some(component) = self.children.first() {
             let avg = self.vals.iter().map(|vals| {
                 vals.back().unwrap_or(&(0.0, f32::NAN)).1
             }).fold(0.0f32, |a, v| {
